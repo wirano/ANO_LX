@@ -23,7 +23,7 @@ uint8_t All_Init()
     //串口3初始化
     DrvUart3Init();
     //接匿名光流
-    DrvUart4Init();
+    DrvUart6Init();
     //串口5接imu
     DrvUart5Init();
     HAL_Delay(100);

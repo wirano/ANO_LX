@@ -44,7 +44,7 @@ void DrvUart6Init(void);
 
 void DrvUart6SendBuf(uint8_t *data, uint8_t len);
 
-void Uart6_IRQ(void);
+void Usart6_IRQ(void);
 
 void DrvUartDataCheck(void);
 

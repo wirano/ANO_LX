@@ -24,8 +24,9 @@ void NoUse(uint8_t data)
 #define U1GetOneByte    NoUse
 #define U2GetOneByte    NoUse
 #define U3GetOneByte    NoUse
-#define U4GetOneByte    AnoOF_GetOneByte
+#define U4GetOneByte    NoUse
 #define U5GetOneByte    ANO_DT_LX_Data_Receive_Prepare
+#define U6GetOneByte    AnoOF_GetOneByte
 
 //====uart1
 void DrvUart1Init(void)
@@ -401,6 +402,79 @@ void Uart5_IRQ(void)
     }
 }
 
+void DrvUart6Init(void)
+{
+    MX_USART6_UART_Init();
+
+    /* Enable the UART Parity Error Interrupt */
+    __HAL_UART_ENABLE_IT(&huart6, UART_IT_PE);
+
+    /* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
+    __HAL_UART_ENABLE_IT(&huart6, UART_IT_ERR);
+
+    /* Enable the UART Data Register not empty Interrupt */
+    __HAL_UART_ENABLE_IT(&huart6, UART_IT_RXNE);
+}
+
+uint8_t Tx6Buffer[256];
+uint8_t Tx6Counter = 0;
+uint8_t count6 = 0;
+
+void DrvUart6SendBuf(unsigned char *DataToSend, uint8_t data_num)
+{
+    uint8_t i;
+    for (i = 0; i < data_num; i++) {
+        Tx6Buffer[count6++] = *(DataToSend + i);
+    }
+
+    if (!__HAL_UART_GET_IT_SOURCE(&huart6, UART_IT_TXE)) {
+        __HAL_UART_ENABLE_IT(&huart6, UART_IT_TXE);
+    }
+}
+
+uint8_t U6RxDataTmp[100];
+uint8_t U6RxInCnt = 0;
+uint8_t U6RxoutCnt = 0;
+
+void drvU6GetByte(uint8_t data)
+{
+    U6RxDataTmp[U6RxInCnt++] = data;
+    if (U6RxInCnt >= 100)
+        U6RxInCnt = 0;
+}
+
+void drvU6DataCheck(void)
+{
+    while (U6RxInCnt != U6RxoutCnt) {
+        U6GetOneByte(U6RxDataTmp[U6RxoutCnt++]);
+        if (U6RxoutCnt >= 100)
+            U6RxoutCnt = 0;
+    }
+}
+
+void Usart6_IRQ(void)
+{
+    uint8_t com_data;
+
+    if (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_ORE)) //ORE中断
+    {
+        com_data = huart6.Instance->DR;
+    }
+    //接收中断
+    if (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_RXNE)) {
+        __HAL_UART_CLEAR_FLAG(&huart6, UART_FLAG_RXNE); //清除中断标志
+        com_data = huart6.Instance->DR;
+        drvU6GetByte(com_data);
+    }
+    //发送（进入移位）中断
+    if (__HAL_UART_GET_FLAG(&huart6, UART_FLAG_TXE)) {
+        huart6.Instance->DR = Tx6Buffer[Tx6Counter++]; //写DR清除中断标志
+        if (Tx6Counter == count6) {
+            __HAL_UART_DISABLE_IT(&huart6,UART_IT_TXE); //关闭TXE（发送中断）中断
+        }
+    }
+}
+
 void DrvUartDataCheck(void)
 {
     drvU1DataCheck();
@@ -408,4 +482,5 @@ void DrvUartDataCheck(void)
     drvU3DataCheck();
     drvU4DataCheck();
     drvU5DataCheck();
+    drvU6DataCheck();
 }

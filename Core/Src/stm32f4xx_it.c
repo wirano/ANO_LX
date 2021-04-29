@@ -325,7 +325,7 @@ void DMA2_Stream0_IRQHandler(void)
 void USART6_IRQHandler(void)
 {
   /* USER CODE BEGIN USART6_IRQn 0 */
-//    Uart6_IRQ();
+    Usart6_IRQ();
 
   /* USER CODE END USART6_IRQn 0 */
   /* USER CODE BEGIN USART6_IRQn 1 */
