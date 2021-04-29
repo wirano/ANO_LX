@@ -3,6 +3,7 @@
 //
 
 #include "drv_rc_in.h"
+#include "board.h"
 #include "main.h"
 
 extern TIM_HandleTypeDef htim3;

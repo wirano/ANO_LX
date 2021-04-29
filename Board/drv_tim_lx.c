@@ -3,12 +3,14 @@
 //
 
 #include "drv_tim_lx.h"
+#include "main.h"
 #include "stm32f4xx.h"
 
 extern TIM_HandleTypeDef htim7;
 
 void DrvTimerFcInit(void)
 {
+    MX_TIM7_Init();
     HAL_TIM_Base_Start_IT(&htim7);
 }
 
