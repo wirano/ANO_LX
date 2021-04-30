@@ -86,12 +86,12 @@ void Error_Handler(void);
 #define IO3_GPIO_Port GPIOE
 #define IO4_Pin GPIO_PIN_8
 #define IO4_GPIO_Port GPIOE
-#define ANO_RGB_G_Pin GPIO_PIN_10
-#define ANO_RGB_G_GPIO_Port GPIOE
-#define ANO_RGB_R_Pin GPIO_PIN_12
-#define ANO_RGB_R_GPIO_Port GPIOE
-#define ANO_RGB_B_Pin GPIO_PIN_15
+#define ANO_RGB_B_Pin GPIO_PIN_10
 #define ANO_RGB_B_GPIO_Port GPIOE
+#define ANO_RGB_G_Pin GPIO_PIN_12
+#define ANO_RGB_G_GPIO_Port GPIOE
+#define ANO_RGB_R_Pin GPIO_PIN_15
+#define ANO_RGB_R_GPIO_Port GPIOE
 #define IO5_Pin GPIO_PIN_12
 #define IO5_GPIO_Port GPIOB
 #define IO6_Pin GPIO_PIN_14
