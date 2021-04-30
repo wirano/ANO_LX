@@ -7,9 +7,6 @@
 
 #include "stm32f4xx.h"
 
-#define UartSendLXIMU    DrvUart2SendBuf
-
-
 void DrvUart1Init(void);
 
 void DrvUart1SendBuf(uint8_t *data, uint8_t len);

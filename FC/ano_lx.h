@@ -7,6 +7,8 @@
 
 #include "stm32f4xx.h"
 
+#define UartSendLXIMU    DrvUart5SendBuf
+
 enum
 {
     ch_1_rol = 0,
