@@ -69,7 +69,7 @@ typedef struct
 
 extern omv_st omv;
 
-static void omv_data_analysis(uint8_t *data, uint8_t len);
+void omv_data_analysis(uint8_t *data, uint8_t len);
 
 void omv_offline_check(uint8_t dT_ms);
 

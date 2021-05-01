@@ -35,6 +35,8 @@ void omv_get_data(uint8_t byte_data)
 //        omv_data_analysis(_omv_rec_buffer, len + 2);
         omv.rec_buffer_p = _omv_rec_buffer;
         omv.rec_len = len + 2;
+        omv.data_received++;
+
         rec_pos = 0;
     } else {
         rec_pos = 0;
@@ -49,10 +51,11 @@ void omv_offline_check(uint8_t dT_ms){
     }
 }
 
-static void omv_data_analysis(uint8_t *data, uint8_t len)
+void omv_data_analysis(uint8_t *data, uint8_t len)
 {
     uint8_t num = 0;
 
+if(omv.data_received) {
     if (data[2] == 0x02) {
         omv.raw_data.type = OMV_DATA_BLOCK;
         omv.raw_data.find = data[3];
@@ -71,7 +74,7 @@ static void omv_data_analysis(uint8_t *data, uint8_t len)
 
             if (_tmp_block[i].shape == OMV_SHAPE_CIRCLE) {
                 omv.raw_data.block.shape = _tmp_block[i].shape;
-                omv.raw_data.block.center_x= _tmp_block[i].center_x;
+                omv.raw_data.block.center_x = _tmp_block[i].center_x;
                 omv.raw_data.block.center_y = _tmp_block[i].center_y;
             }
         }
@@ -102,11 +105,15 @@ static void omv_data_analysis(uint8_t *data, uint8_t len)
 //                if(opmv.lt.angle > -5 && opmv.lt.angle < 5){
 //                    opmv.lt.angle = 0;
 //                }
-                omv.raw_data.line.offset = (_tmp_line[i].start_x + _tmp_line[i].start_y * tan(_tmp_line[i].angle / 180.0 * 3.14159));
+                omv.raw_data.line.offset = (_tmp_line[i].start_x +
+                                            _tmp_line[i].start_y * tan(_tmp_line[i].angle / 180.0 * 3.14159));
             }
         }
     }
 
+    omv.data_received--;
+
     omv.offline_time_cnt = 0;
     omv.offline = 0;
+}
 }
