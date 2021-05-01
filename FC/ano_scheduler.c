@@ -5,6 +5,7 @@
 #include "ano_scheduler.h"
 #include "user_task.h"
 #include "main.h"
+#include "open_mv.h"
 
 
 static void Loop_1000Hz(void) //1ms执行一次
@@ -39,6 +40,8 @@ static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
     one_key_takeoff_land(20);
+    omv_offline_check(20);
+    omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
     //////////////////////////////////////////////////////////////////////
 }
 
