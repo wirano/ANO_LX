@@ -40,6 +40,9 @@ static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
     one_key_takeoff_land(20);
+//    fly();
+//    process_control(20);
+    fly_s(20);
     omv_offline_check(20);
     omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
     //////////////////////////////////////////////////////////////////////
