@@ -35,7 +35,7 @@ void omv_get_data(uint8_t byte_data)
 //        omv_data_analysis(_omv_rec_buffer, len + 2);
         omv.rec_buffer_p = _omv_rec_buffer;
         omv.rec_len = len + 2;
-        omv.data_received++;
+        omv.data_received = 1;
 
         rec_pos = 0;
     } else {
@@ -111,7 +111,7 @@ if(omv.data_received) {
         }
     }
 
-    omv.data_received--;
+    omv.data_received = 0;
 
     omv.offline_time_cnt = 0;
     omv.offline = 0;
