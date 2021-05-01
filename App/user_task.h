@@ -7,6 +7,6 @@
 
 #include "fc_config.h"
 
-void UserTask_OneKeyCmd(void);
+void one_key_takeoff_land(uint16_t dt_ms);
 
 #endif //USER_TASK_H
