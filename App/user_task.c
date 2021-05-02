@@ -6,7 +6,8 @@
 #include "drv_rc_in.h"
 #include "ano_lx_function.h"
 
-void one_key_takeoff_land(uint16_t dt_ms) {
+void one_key_takeoff_land(uint16_t dt_ms)
+{
     //////////////////////////////////////////////////////////////////////
     //一键起飞/降落例程
     //////////////////////////////////////////////////////////////////////
@@ -79,4 +80,54 @@ void one_key_takeoff_land(uint16_t dt_ms) {
 //        }
     }
     ////////////////////////////////////////////////////////////////////////
+}
+
+void test_api(uint16_t dt_ms)
+{
+    static uint16_t dt_cnt;
+    static uint8_t mission_complete = 0;
+
+    if (!mission_complete && rc_in.rc_ch.st_data.ch_[ch_7_aux3] > 1500) {
+        if (dt_cnt == 1000) {
+            Vertical_Rising(50, 25);
+        }
+
+        if (dt_cnt > 1000 && dt_cnt < 3500);
+
+        if (dt_cnt == 3500) {
+            Left_Rotate(90, 30);
+        }
+
+        if (dt_cnt > 3500 && dt_cnt < 7000);
+
+        if (dt_cnt == 7000) {
+            Right_Rotate(90, 30);
+        }
+
+        if (dt_cnt > 7000 && dt_cnt < 10500);
+
+        if (dt_cnt == 10500) {
+            Vertical_Declining(50, 25);
+        }
+
+        if (dt_cnt > 10500 && dt_cnt < 13000);
+
+        if (dt_cnt == 13000) {
+            Horizontal_Move(100, 25, 0);
+        }
+
+        if (dt_cnt > 13000 && dt_cnt < 15000);
+
+        if (dt_cnt == 15000) {
+            OneKey_Hover();
+            dt_cnt = 0;
+            mission_complete = 1;
+        }
+        dt_cnt += dt_ms;
+    }
+
+    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 1500) {
+        dt_cnt = 0;
+        mission_complete = 0;
+    }
 }

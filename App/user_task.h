@@ -9,4 +9,6 @@
 
 void one_key_takeoff_land(uint16_t dt_ms);
 
+void test_api(uint16_t dt_ms);
+
 #endif //USER_TASK_H
