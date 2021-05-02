@@ -1028,7 +1028,7 @@ void MX_USART3_UART_Init(void)
 
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 500000;
+  huart3.Init.BaudRate = 115200;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
@@ -1113,7 +1113,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, LED_5_Pin|LED_6_Pin|key0_Pin|IO3_Pin
-                          |IO4_Pin|ANO_RGB_G_Pin|ANO_RGB_R_Pin|ANO_RGB_B_Pin
+                          |IO4_Pin|ANO_RGB_R_Pin|ANO_RGB_G_Pin|ANO_RGB_B_Pin
                           |ANO_LED_OB_Pin|LED_4_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -1158,8 +1158,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ANO_RGB_G_Pin ANO_RGB_R_Pin ANO_RGB_B_Pin */
-  GPIO_InitStruct.Pin = ANO_RGB_G_Pin|ANO_RGB_R_Pin|ANO_RGB_B_Pin;
+  /*Configure GPIO pins : ANO_RGB_R_Pin ANO_RGB_G_Pin ANO_RGB_B_Pin */
+  GPIO_InitStruct.Pin = ANO_RGB_R_Pin|ANO_RGB_G_Pin|ANO_RGB_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
