@@ -78,6 +78,6 @@ void rot_vec_2(float in[2], float sinx, float out[2]);
 float vec_2_cross_product(float in1[2], float in2[2]);                       //正负为in1->in2 夹角逆时针
 float vec_2_dot_product(float in1[2], float in2[2]);                         //正负为in1->in2 夹角（空间实际夹角）
 void vec_3_cross_product_err_sinx(float in1[3], float in2[3], float out[3]); //输出xyz误差夹角x 的sin(x)，右手螺旋
-float vec_3_dot_product(float in1[3], float in2[3]);
+float vec_3_dot_product(float in1[3], float in2[3]);                         //正负为in1->in2 夹角（空间实际夹角）
 
 #endif //ANO_MATH_H
