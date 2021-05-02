@@ -82,6 +82,6 @@ void CK_Back(uint8_t dest_addr, _ck_st *ck);
 
 void PAR_Back(uint8_t dest_addr, _par_st *par);
 
-void ANO_DT_String(const char *str);
+void ANO_DT_String(uint8_t color, const char *str);
 
 #endif //ANO_LX_DT_H
