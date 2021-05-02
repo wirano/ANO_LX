@@ -54,7 +54,7 @@ typedef struct
     _omv_data_type_em type;
     _omv_block_st block;
     _omv_line_st line;
-    uint8_t find;
+    uint8_t find;//找到目标
 } _omv_data_st;
 
 typedef struct

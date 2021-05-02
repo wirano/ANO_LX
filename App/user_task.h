@@ -7,16 +7,29 @@
 
 #include "fc_config.h"
 
-#define Mission_finish 1
-#define UnMission_finish 0
+#define process_dt_ms   20
+#define Mission_finish  1
+#define Mission_Unfinished  0
+#define delay_finish    1
+#define delay_Unfinished    0
+#define LX_LED  0
+#define USER_LED    1
+#define NONE    0
+#define RGB_R   1
+#define RGB_G   2
+#define RGB_B   3
 
-void one_key_takeoff_land(uint16_t dt_ms);
+void one_key_takeoff_land();
 
-uint8_t fly(uint8_t dt_ms,uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360);
+void light_check(uint8_t group,uint8_t color);
 
-void process_control(uint16_t dt_ms);
+uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360);
 
-uint8_t user_takeoff(uint8_t dt_ms);
+void process_control();
 
-void fly_s(uint16_t dt_ms);
+uint8_t user_takeoff();
+
+uint8_t process_delay(uint16_t delay_ms);
+
+void fly_s();
 #endif //USER_TASK_H
