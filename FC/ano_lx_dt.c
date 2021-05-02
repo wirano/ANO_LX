@@ -9,10 +9,10 @@
 #include "drv_led.h"
 #include "ano_lx_state.h"
 #include "drv_uart.h"
-
-#define MAX_DATA_LEN 100
+#include "string.h"
 
 uint8_t send_buffer[MAX_DATA_LEN + 6]; //发送数据缓存
+_dt_string_st string_to_send;
 _dt_st dt;
 
 void ANO_DT_Init(void)
@@ -51,6 +51,22 @@ void ANO_DT_Init(void)
     dt.fun[0xe2].D_Addr = 0xff;
     dt.fun[0xe2].fre_ms = 0;      //0 由外部触发
     dt.fun[0xe2].time_cnt_ms = 0; //设置初始相位，单位1ms
+    //LOG信息输出--字符串
+    dt.fun[0xa0].D_Addr = 0xff;
+    dt.fun[0xa0].fre_ms = 0;
+    dt.fun[0xa0].time_cnt_ms = 0;
+}
+
+void ANO_DT_String(const char *str)
+{
+    string_to_send.str_len = strlen(str);
+    if(string_to_send.str_len > MAX_DATA_LEN){
+        string_to_send.str_len = MAX_DATA_LEN;
+    }
+
+    memcpy(string_to_send.str,str,string_to_send.str_len);
+
+    dt.fun[0xa0].WTS = 1;
 }
 
 //数据发送接口
@@ -166,13 +182,13 @@ static void ANO_DT_LX_Data_Receive_Anl(uint8_t *data, uint8_t len)
         fc_sta.cmd_fun.CMD_1 = *(data + 8);
     }
         //欧拉角姿态
-    else if(*(data + 2) == 0x03){
+    else if (*(data + 2) == 0x03) {
         fc_sta.fc_attitude.rol = *(data + 4) / 100.0;
         fc_sta.fc_attitude.pit = *(data + 5) / 100.0;
         fc_sta.fc_attitude.yaw = *(data + 6) / 100.0;
     }
         //高度数据
-    else if(*(data + 2) == 0x05){
+    else if (*(data + 2) == 0x05) {
         fc_sta.fc_attitude.alt_fu = *((int32_t *) (data + 4));
         fc_sta.fc_attitude.alt_add = *((int32_t *) (data + 8));
     }
@@ -305,6 +321,13 @@ static void Add_Send_Data(uint8_t frame_num, uint8_t *_cnt, uint8_t send_buffer[
             }
         }
             break;
+        case 0xa0: //LOG 信息输出--字符串
+        {
+            for (uint8_t i = 0; i < string_to_send.str_len; i++) {
+                send_buffer[(*_cnt)++] = string_to_send.str[i];
+            }
+        }
+            break;;
         case 0xe2: //PARA返回
         {
             temp_data = dt.par_data.par_id;
@@ -441,4 +464,5 @@ void ANO_LX_Data_Exchange_Task(float dT_s)
     Check_To_Send(0xe0);
     Check_To_Send(0xe2);
     Check_To_Send(0x0d);
+    Check_To_Send(0xa0);
 }

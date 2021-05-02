@@ -9,6 +9,7 @@
 
 //==定义/声明
 #define FUN_NUM_LEN 256
+#define MAX_DATA_LEN 100
 
 typedef struct
 {
@@ -52,6 +53,11 @@ typedef struct
     _par_st par_data;
 } _dt_st;
 
+typedef struct {
+    uint8_t str[MAX_DATA_LEN];
+    uint8_t str_len;
+} _dt_string_st;
+
 //==数据声明
 extern _dt_st dt;
 
@@ -75,5 +81,7 @@ void CMD_Send(uint8_t dest_addr, _cmd_st *cmd);
 void CK_Back(uint8_t dest_addr, _ck_st *ck);
 
 void PAR_Back(uint8_t dest_addr, _par_st *par);
+
+void ANO_DT_String(const char *str);
 
 #endif //ANO_LX_DT_H
