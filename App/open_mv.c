@@ -109,7 +109,8 @@ void omv_data_analysis(uint8_t *data, uint8_t len) {
             }
         }
 
-        omv.data_received = 0;
+    omv.data_received = 0;
+    omv.raw_data.data_flushed = 1;
 
     omv.offline_time_cnt = 0;
     omv.online = 1;
