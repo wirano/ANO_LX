@@ -60,11 +60,11 @@ void ANO_DT_Init(void)
 void ANO_DT_String(uint8_t color, const char *str)
 {
     string_to_send.str_len = strlen(str) + 1;
-    if(string_to_send.str_len > MAX_DATA_LEN){
+    if (string_to_send.str_len > MAX_DATA_LEN) {
         string_to_send.str_len = MAX_DATA_LEN;
     }
 
-    memcpy((string_to_send.str + 1),str,string_to_send.str_len - 1);
+    memcpy((string_to_send.str + 1), str, string_to_send.str_len - 1);
     string_to_send.str[0] = color;
 
     dt.fun[0xa0].WTS = 1;
@@ -184,9 +184,9 @@ static void ANO_DT_LX_Data_Receive_Anl(uint8_t *data, uint8_t len)
     }
         //欧拉角姿态
     else if (*(data + 2) == 0x03) {
-        fc_sta.fc_attitude.rol = *(data + 4) / 100.0;
-        fc_sta.fc_attitude.pit = *(data + 5) / 100.0;
-        fc_sta.fc_attitude.yaw = *(data + 6) / 100.0;
+        fc_sta.fc_attitude.rol = (*((int16_t *) (data + 4))) / 100.0;
+        fc_sta.fc_attitude.pit = (*((int16_t *) (data + 6))) / 100.0;
+        fc_sta.fc_attitude.yaw = (*((int16_t *) (data + 8))) / 100.0;
     }
         //高度数据
     else if (*(data + 2) == 0x05) {
