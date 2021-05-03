@@ -59,7 +59,7 @@ typedef struct
 
 typedef struct
 {
-    uint8_t offline;
+    uint8_t online;
     uint16_t offline_time_cnt;
     _omv_data_st raw_data;
     uint8_t data_received;
