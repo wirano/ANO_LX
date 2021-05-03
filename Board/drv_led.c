@@ -206,7 +206,7 @@ void user_rgb_tasks(uint16_t dt_ms)
             break;
     }
 
-    if(led_cnt >= user_led.led_num - 1){
+    if(led_cnt >= user_led.led_num){
         led_cnt = 255;
     }
 
