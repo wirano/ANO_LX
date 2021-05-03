@@ -112,6 +112,7 @@ if(omv.data_received) {
     }
 
     omv.data_received = 0;
+    omv.raw_data.data_flushed = 1;
 
     omv.offline_time_cnt = 0;
     omv.online = 1;

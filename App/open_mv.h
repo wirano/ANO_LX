@@ -51,6 +51,7 @@ typedef struct
 
 typedef struct
 {
+    uint8_t data_flushed; //数据刷新标志
     _omv_data_type_em type;
     _omv_block_st block;
     _omv_line_st line;
