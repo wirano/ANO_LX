@@ -193,7 +193,7 @@ void process_control() {
             }
         } //程控起飞
         else if (mission_step == 2) {
-            if (omv.offline == 0 && omv.raw_data.find == 1) {
+            if (omv.online == 1 && omv.raw_data.find == 1) {
                 omv_lose = 0;
 
                 if (omv.raw_data.type == OMV_DATA_LINE) {
@@ -204,7 +204,7 @@ void process_control() {
                 if (omv.raw_data.type == OMV_DATA_BLOCK) {
                     light_check(LX_LED,RGB_B);
                 }
-            } else if (omv.offline == 0 && omv.raw_data.find == 0) {
+            } else if (omv.online == 1 && omv.raw_data.find == 0) {
                 light_check(LX_LED,RGB_R);
                 omv_lose++;
             }

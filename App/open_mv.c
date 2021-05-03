@@ -47,7 +47,7 @@ void omv_offline_check(uint8_t dT_ms){
     if(omv.offline_time_cnt < OMV_OFFLINE_TIMEOUT){
         omv.offline_time_cnt += dT_ms;
     } else{
-        omv.offline = 1;
+        omv.online = 0;
     }
 }
 
@@ -114,6 +114,6 @@ if(omv.data_received) {
     omv.data_received = 0;
 
     omv.offline_time_cnt = 0;
-    omv.offline = 0;
+    omv.online = 1;
 }
 }
