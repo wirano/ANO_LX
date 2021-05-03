@@ -5,6 +5,7 @@
 #include "ano_scheduler.h"
 #include "user_task.h"
 #include "main.h"
+#include "ano_lx_dt.h"
 
 
 static void Loop_1000Hz(void) //1ms执行一次
@@ -51,7 +52,7 @@ static void Loop_20Hz(void) //50ms执行一次
 
 static void Loop_2Hz(void) //500ms执行一次
 {
-    test_api(500);
+//    test_api(500);
 }
 //////////////////////////////////////////////////////////////////////
 //调度器初始化

@@ -18,7 +18,7 @@ typedef int16_t vec2_s16[2];
 #define TICK_PER_SECOND    1000
 #define TICK_US    (1000000/TICK_PER_SECOND)
 #define PWM_FRE_HZ 400
-#define LED_NUM 4
+#define ANO_LED_NUM 4
 
 #define BYTE0(dwTemp) (*((char *)(&dwTemp)))
 #define BYTE1(dwTemp) (*((char *)(&dwTemp) + 1))
