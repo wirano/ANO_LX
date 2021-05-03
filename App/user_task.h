@@ -18,10 +18,14 @@
 #define RGB_R   1
 #define RGB_G   2
 #define RGB_B   3
+#define ALL 4
+#define Mission_over 99
+
+extern void onekey_lock(void);
 
 void one_key_takeoff_land();
 
-void light_check(uint8_t group,uint8_t color);
+void light_check(uint8_t group, uint8_t color);
 
 uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360);
 
@@ -32,6 +36,7 @@ uint8_t user_takeoff();
 uint8_t process_delay(uint16_t delay_ms);
 
 void fly_s();
-extern void onekey_lock(void);
+
+uint8_t omv_find_detection();
 
 #endif //USER_TASK_H

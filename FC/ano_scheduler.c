@@ -13,7 +13,7 @@
 static void Loop_1000Hz(void) //1ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-    user_rgb_drv();
+//    user_rgb_drv();
     //////////////////////////////////////////////////////////////////////
 }
 
@@ -41,13 +41,10 @@ static void Loop_100Hz(void) //10ms执行一次
 static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-    user_rgb_tasks(20);
-//    one_key_takeoff_land(20);
-//    fly();
-    process_control(20);
-//    fly_s(20);
-    omv_offline_check(20);
+//    user_rgb_tasks(20);
+    process_control();
     omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
+    omv_offline_check(20);
     //////////////////////////////////////////////////////////////////////
 }
 
