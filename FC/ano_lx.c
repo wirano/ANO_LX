@@ -279,7 +279,7 @@ void ANO_LX_Task()
     //通信交换
     ANO_LX_Data_Exchange_Task(0.001f);
     //电调输出
-    ESC_Output(1); //unlocked
+    ESC_Output(fc_sta.onekey_lock_unlocked); //unlocked
     //灯光驱动
 //    LED_1ms_DRV();
 }

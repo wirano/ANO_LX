@@ -9,6 +9,7 @@
 #include "open_mv.h"
 #include "ano_lx.h"
 #include "ano_lx_function.h"
+#include "ano_lx_state.h"
 #include "ano_math.h"
 
 extern _rt_tar_un rt_tar;
@@ -235,5 +236,18 @@ void fly_s() {
             fly_s_delay = 0;
         }
         fly_s_delay += process_dt_ms;
+    }
+}
+inline void onekey_lock(void)
+{
+    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2000) {
+        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+            FC_Lock();
+        }
+
+        fc_sta.onekey_lock_unlocked = 0;
+    }else if(!fc_sta.onekey_lock_unlocked)
+    {
+        fc_sta.onekey_lock_unlocked = 1;
     }
 }

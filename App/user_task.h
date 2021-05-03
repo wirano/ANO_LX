@@ -32,4 +32,6 @@ uint8_t user_takeoff();
 uint8_t process_delay(uint16_t delay_ms);
 
 void fly_s();
+extern void onekey_lock(void);
+
 #endif //USER_TASK_H
