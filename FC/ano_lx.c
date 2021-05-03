@@ -123,11 +123,18 @@ static inline void RC_Data_Task(float dT_s)
         //摇杆转换姿态量、油门量
         //注意0.00217f和0.00238f是为了对应的补偿死区减小的部分，原本为0.002f，±500转换到±1。
         //注意正负号需要满足ANO坐标系定义，一般情况姿态角表示方向（包括上位机）和遥控摇杆反向都与飞控使用的ANO坐标系不同。
+		if(mod_f[0]<2)
+		{
         rt_tar.st_data.rol = tmp_ch_dz[ch_1_rol] * 0.00217f * MAX_ANGLE;
         rt_tar.st_data.pit = -tmp_ch_dz[ch_2_pit] * 0.00217f * MAX_ANGLE;		//因为摇杆俯仰方向和定义的俯仰方向相反，所以取负
         rt_tar.st_data.thr = (rc_in.rc_ch.st_data.ch_[ch_3_thr] - 1000);		//0.1%
         rt_tar.st_data.yaw_dps = -tmp_ch_dz[ch_4_yaw] * 0.00238f * MAX_YAW_DPS; //因为摇杆航向方向和定义的航向方向相反，所以取负
-
+		}
+		//实时XYZ-YAW期望速度
+//		rt_tar.st_data.yaw_dps = 0;
+//		rt_tar.st_data.vel_x = 0;
+//		rt_tar.st_data.vel_y = 0;
+//		rt_tar.st_data.vel_z = 0;
         //=====
         dt.fun[0x41].WTS = 1; //将要发送rt_tar数据。
         //失控保护标记复位
@@ -156,8 +163,8 @@ static inline void RC_Data_Task(float dT_s)
         rt_tar.st_data.rol = 0;
         rt_tar.st_data.pit = 0;
         rt_tar.st_data.thr = 350; //用于模式0，避免模式0时失控，油门过大飞跑，给一个稍低于中位的油门
+		//这里会把实时XYZ-YAW期望速度置零
         rt_tar.st_data.yaw_dps = 0;
-        //
         rt_tar.st_data.vel_x =
         rt_tar.st_data.vel_y =
         rt_tar.st_data.vel_z = 0;

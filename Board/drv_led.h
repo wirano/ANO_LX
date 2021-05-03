@@ -25,11 +25,11 @@
 #define ANO_RGB_B_OFF ANO_RGB_B_GPIO_Port->BSRR = ANO_RGB_B_Pin << 16U
 #define ANO_RGB_B_ON ANO_RGB_B_GPIO_Port->BSRR = ANO_RGB_B_Pin
 
-#define LED_NUM 4
+#define ANO_LED_NUM 4
 
 typedef union {
     //
-    int8_t brightness[LED_NUM];
+    int8_t brightness[ANO_LED_NUM];
 
 } _led_st;
 

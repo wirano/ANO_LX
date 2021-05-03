@@ -45,9 +45,9 @@ void LED_On_Off(uint16_t leds)
 _led_st led;
 void LED_1ms_DRV() //
 {
-    static uint16_t led_cnt[LED_NUM];
+    static uint16_t led_cnt[ANO_LED_NUM];
     uint16_t led_tmp;
-    for (uint8_t i = 0; i < LED_NUM; i++)
+    for (uint8_t i = 0; i < ANO_LED_NUM; i++)
     {
 
         if (led_cnt[i] < (int16_t)led.brightness[i])
