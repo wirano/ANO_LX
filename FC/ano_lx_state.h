@@ -53,6 +53,8 @@ typedef struct
     //姿态
     _fc_attitude_st fc_attitude;
 
+    uint8_t onekey_lock_unlocked; //遥控一键锁浆flag
+
 } _fc_state_st;
 
 
