@@ -5,6 +5,8 @@
 #ifndef ANO_FILTER_H
 #define ANO_FILTER_H
 
+#include "fc_config.h"
+
 typedef struct
 {
     float out;
@@ -171,8 +173,8 @@ float my_deadzone_3(float T, float hz, float x, float, float zoom, float range_x
 对应世界坐标中，x为地磁方向，z为重力方向。
 
 ======================================*/
-void vec_3dh_transition(float ref[VEC_XYZ], float in[VEC_XYZ], float out[VEC_XYZ]);
-
-void vec_3dh_transition_matrix(float ref[VEC_XYZ], float wh_matrix[VEC_XYZ][VEC_XYZ]);
+//void vec_3dh_transition(float ref[VEC_XYZ], float in[VEC_XYZ], float out[VEC_XYZ]);
+//
+//void vec_3dh_transition_matrix(float ref[VEC_XYZ], float wh_matrix[VEC_XYZ][VEC_XYZ]);
 
 #endif //ANO_FILTER_H
