@@ -5,6 +5,8 @@
 #include "ano_lx_function.h"
 #include "ano_lx_state.h"
 #include "ano_lx_dt.h"
+#include "ano_math.h"
+#include "drv_ano_of.h"
 
 
 uint8_t FC_Unlock()
@@ -275,6 +277,38 @@ uint8_t Right_Rotate(uint16_t deg, uint16_t dps)
         return 1;
     } else {
         return 0;
+    }
+}
+
+/**
+ * @brief 设定绝对高度(激光tof对地高度)
+ * @param height 单位:cm
+ * @return 0:未到达设定高度
+ *         1:已到达设定高度
+ */
+uint8_t HeightSet(uint16_t height)
+{
+    uint8_t PermissibleError=2;    //允许的高度误差
+
+    if( (height-ano_of.of_alt_cm)>PermissibleError )
+    {
+        Vertical_Rising( 100,LIMIT(0.4*(height-ano_of.of_alt_cm),0,30) );
+        Horizontal_Move(0,0,0);
+
+        return 0;
+    }
+    else if( (height-ano_of.of_alt_cm)<-PermissibleError )
+    {
+        Vertical_Declining(100,LIMIT(-0.4*(height-ano_of.of_alt_cm),0,30));
+        Horizontal_Move(0,0,0);
+
+        return 0;
+    }
+    else
+    {
+        OneKey_Hover();
+
+        return 1;
     }
 }
 
