@@ -50,6 +50,7 @@ include_directories(${includes}
     ModelDriver
     FC
     App
+    fc_lib
     )
 
 add_definitions(${defines})
@@ -59,6 +60,7 @@ file(GLOB_RECURSE SOURCES ${sources}
     "ModelDriver/*.c"
     "FC/*.c"
     "App/*.c"
+    "fc_lib/*.c"
     )
 
 set(LINKER_SCRIPT $${CMAKE_SOURCE_DIR}/${linkerScript})

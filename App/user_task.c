@@ -11,9 +11,29 @@
 #include "ano_lx_function.h"
 #include "ano_lx_state.h"
 #include "ano_math.h"
+#include "PID.h"
+#include <math.h>
 
 extern _rt_tar_un rt_tar;
 extern uint16_t ano_mode;
+
+uint8_t omv_find_detection() {
+    static uint16_t omv_lose;
+    if (omv.online == 1 && omv.raw_data.find == 0) {
+        light_check(LX_LED, RGB_R);
+        omv_lose++;
+    } else if (omv.online == 1 && omv.raw_data.find == 1) {
+        omv_lose = 0;
+    }
+    if (omv.online == 0) {
+        light_check(USER_LED, RGB_R);
+        omv_lose++;
+    }
+    if (omv_lose > (3000 / process_dt_ms)) {
+        return Mission_over;
+    }
+    return 0;
+}
 
 void one_key_takeoff_land() {
     //////////////////////////////////////////////////////////////////////
@@ -90,34 +110,38 @@ void one_key_takeoff_land() {
     ////////////////////////////////////////////////////////////////////////
 }
 
-void light_check(uint8_t group,uint8_t color)
-{
-    if (group==LX_LED){
+void light_check(uint8_t group, uint8_t color) {
+    if (group == LX_LED) {
         HAL_GPIO_WritePin(ANO_RGB_R_GPIO_Port, ANO_RGB_R_Pin, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(ANO_RGB_G_GPIO_Port, ANO_RGB_G_Pin, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(ANO_RGB_B_GPIO_Port, ANO_RGB_B_Pin, GPIO_PIN_RESET);
-        if (color==RGB_R){
+        if (color == RGB_R) {
             HAL_GPIO_WritePin(ANO_RGB_R_GPIO_Port, ANO_RGB_R_Pin, GPIO_PIN_SET);
         }
-        if (color==RGB_G){
+        if (color == RGB_G) {
             HAL_GPIO_WritePin(ANO_RGB_G_GPIO_Port, ANO_RGB_G_Pin, GPIO_PIN_SET);
         }
-        if (color==RGB_B){
+        if (color == RGB_B) {
             HAL_GPIO_WritePin(ANO_RGB_B_GPIO_Port, ANO_RGB_B_Pin, GPIO_PIN_SET);
         }
-    } else if (group==USER_LED){
-        HAL_GPIO_WritePin(ANO_RGB_B_GPIO_Port, ANO_RGB_B_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(ANO_RGB_G_GPIO_Port, ANO_RGB_G_Pin, GPIO_PIN_RESET);
-        HAL_GPIO_WritePin(ANO_RGB_R_GPIO_Port, ANO_RGB_R_Pin, GPIO_PIN_RESET);
-//        if (color==RGB_B){
-//            HAL_GPIO_WritePin(ANO_RGB_B_GPIO_Port, ANO_RGB_B_Pin, GPIO_PIN_SET);
-//        }
-//        if (color==RGB_G){
-//            HAL_GPIO_WritePin(ANO_RGB_R_GPIO_Port, ANO_RGB_R_Pin, GPIO_PIN_SET);
-//        }
-//        if (color==RGB_R){
-//            HAL_GPIO_WritePin(ANO_RGB_R_GPIO_Port, ANO_RGB_R_Pin, GPIO_PIN_SET);
-//        }
+        if (color == ALL) {
+            HAL_GPIO_WritePin(ANO_RGB_R_GPIO_Port, ANO_RGB_R_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(ANO_RGB_G_GPIO_Port, ANO_RGB_G_Pin, GPIO_PIN_SET);
+            HAL_GPIO_WritePin(ANO_RGB_B_GPIO_Port, ANO_RGB_B_Pin, GPIO_PIN_SET);
+        }
+    } else if (group == USER_LED) {
+        HAL_GPIO_WritePin(USER_LED_R_GPIO_Port, USER_LED_R_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(USER_LED_G_GPIO_Port, USER_LED_G_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(USER_LED_B_GPIO_Port, USER_LED_B_Pin, GPIO_PIN_RESET);
+        if (color == RGB_R) {
+            HAL_GPIO_WritePin(USER_LED_R_GPIO_Port, USER_LED_R_Pin, GPIO_PIN_SET);
+        }
+        if (color == RGB_G) {
+            HAL_GPIO_WritePin(USER_LED_G_GPIO_Port, USER_LED_G_Pin, GPIO_PIN_SET);
+        }
+        if (color == RGB_B) {
+            HAL_GPIO_WritePin(USER_LED_B_GPIO_Port, USER_LED_B_Pin, GPIO_PIN_SET);
+        }
     }
 }
 
@@ -168,8 +192,10 @@ uint8_t user_takeoff() {
 void process_control() {
     static uint16_t mission_flag = 0, mission_step = 0;
     static uint16_t ready = 0;
-    static uint8_t mission_finish;
-    static uint8_t omv_lose;
+    static uint8_t mission_finish, block_f = 0;
+    static uint16_t omv_lose, last_offset = 0;
+    static float pid_angle,pid_vy;
+    static uint16_t move_angle = 0;
 
     if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
         //进入程控模式
@@ -184,9 +210,9 @@ void process_control() {
         HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
     } else {
         HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
-        light_check(LX_LED,NONE);
+        light_check(LX_LED, NONE);
+        light_check(USER_LED, NONE);
     }//BEEP SWITCH
-
     if (mission_flag == 1) {
         if (mission_step == 1) {
             if (user_takeoff() == Mission_finish) {
@@ -194,29 +220,46 @@ void process_control() {
             }
         } //程控起飞
         else if (mission_step == 2) {
-            if (omv.online == 1 && omv.raw_data.find == 1) {
-                omv_lose = 0;
-
-                if (omv.raw_data.type == OMV_DATA_LINE) {
-                    light_check(LX_LED,RGB_G);
-                    if (ABS(omv.raw_data.line.angle)>10)
-                    Left_Rotate(ABS(omv.raw_data.line.angle),5);
+            if (omv.online == 1) {
+                if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
+                    omv.raw_data.data_flushed = 0;
+                    if (omv.raw_data.type == OMV_DATA_LINE) {
+                        light_check(LX_LED, RGB_G);
+                        if (ABS(omv.raw_data.line.angle) > 10) {
+                            pid_angle= PID_PositionalRealize(&PID_PositionalLine_angle,omv.raw_data.line.angle,0);
+                            pid_vy= PID_PositionalRealize(&PID_PositionalLine_vy,,0);
+                            move_angle=(int)(omv.raw_data.line.angle+ atan2(pid_vy,40)/3.14*180);
+                            if (pid_angle<0) {
+                                Left_Rotate(10, ABS(pid_angle));
+                                Horizontal_Move(40,40,move_angle);
+//                                Horizontal_Move(30, 40, 360 + omv.raw_data.line.angle+PID_PositionalRealize(&PID_PositionalLine_angle, speed[0], setSpeed[0]);
+                                light_check(USER_LED, RGB_B);
+                            }
+                            if (pid_angle>0) {
+                                Right_Rotate(10, ABS(pid_angle));
+                                Horizontal_Move(40,40,move_angle);
+                                light_check(USER_LED, RGB_G);
+                            }
+                        } else{
+                            Horizontal_Move(30, 40, 0);
+                        }
+                    }
+                    if (omv.raw_data.type == OMV_DATA_BLOCK && process_delay(10000) == delay_finish) {
+                        mission_step++;
+                    }
                 }
-                if (omv.raw_data.type == OMV_DATA_BLOCK) {
-                    light_check(LX_LED,RGB_B);
+                if (omv.online == 1 && (omv.raw_data.find == 0 || omv.raw_data.type == OMV_DATA_BLOCK)) {
+                    Horizontal_Move(30, 40, 0);
                 }
-            } else if (omv.online == 1 && omv.raw_data.find == 0) {
-                light_check(LX_LED,RGB_R);
-                omv_lose++;
             }
-            if (omv_lose > (6000 / process_dt_ms)) {
-                mission_step++;
+            if (omv_find_detection() == Mission_over) {
+                mission_step = Mission_over;
             }
-        } else {
+        } else if (mission_step == Mission_over) {
             OneKey_Land();
             mission_step = 0;
             ready = 0;
-            omv_lose=0;
+            omv_lose = 0;
         }
     }
 }
@@ -238,16 +281,15 @@ void fly_s() {
         fly_s_delay += process_dt_ms;
     }
 }
-inline void onekey_lock(void)
-{
+
+inline void onekey_lock(void) {
     if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2000) {
         if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
             FC_Lock();
         }
 
         fc_sta.onekey_lock_unlocked = 0;
-    }else if(!fc_sta.onekey_lock_unlocked)
-    {
+    } else if (!fc_sta.onekey_lock_unlocked) {
         fc_sta.onekey_lock_unlocked = 1;
     }
 }

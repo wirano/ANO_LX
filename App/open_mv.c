@@ -18,8 +18,7 @@ uint8_t _omv_rec_buffer[256];
 _omv_line_st _tmp_line[25];
 _omv_block_st _tmp_block[25];
 
-void omv_get_data(uint8_t byte_data)
-{
+void omv_get_data(uint8_t byte_data) {
     static uint8_t len = 0, rec_pos = 0;
 
     _omv_rec_buffer[rec_pos] = byte_data;
@@ -149,11 +148,11 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                     _tmp_line[i].len = data[6 * num_block + 5 + 6 * i + 4];
                     _tmp_line[i].angle = data[6 * num_block + 5 + 6 * i + 5];
 
-                    if (_tmp_line[i].angle > 170 || _tmp_line[i].angle < 20) {
+                    if (_tmp_line[i].angle > 160 || _tmp_line[i].angle < 30) {
                         if (_tmp_line[i].angle > 90) {
-                            omv.raw_data.line.angle = (180 - _tmp_line[i].angle);
+                            omv.raw_data.line.angle = _tmp_line[i].angle-180;
                         } else {
-                            omv.raw_data.line.angle = -_tmp_line[i].angle;
+                            omv.raw_data.line.angle = _tmp_line[i].angle;
                         }
 //                if(opmv.lt.angle > -5 && opmv.lt.angle < 5){
 //                    opmv.lt.angle = 0;
