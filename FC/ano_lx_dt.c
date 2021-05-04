@@ -52,9 +52,49 @@ void ANO_DT_Init(void)
     dt.fun[0xe2].fre_ms = 0;      //0 由外部触发
     dt.fun[0xe2].time_cnt_ms = 0; //设置初始相位，单位1ms
     //LOG信息输出--字符串
-    dt.fun[0xa0].D_Addr = 0xaf;
+    dt.fun[0xa0].D_Addr = 0xff;
     dt.fun[0xa0].fre_ms = 0;
     dt.fun[0xa0].time_cnt_ms = 0;
+    //灵活格式帧
+    dt.fun[0xf1].D_Addr = 0xff;
+    dt.fun[0xf1].fre_ms = 0;
+    dt.fun[0xf1].time_cnt_ms = 0;
+
+    dt.fun[0xf2].D_Addr = 0xff;
+    dt.fun[0xf2].fre_ms = 0;
+    dt.fun[0xf2].time_cnt_ms = 0;
+
+    dt.fun[0xf3].D_Addr = 0xff;
+    dt.fun[0xf3].fre_ms = 0;
+    dt.fun[0xf3].time_cnt_ms = 0;
+
+    dt.fun[0xf4].D_Addr = 0xff;
+    dt.fun[0xf4].fre_ms = 0;
+    dt.fun[0xf4].time_cnt_ms = 0;
+
+    dt.fun[0xf5].D_Addr = 0xff;
+    dt.fun[0xf5].fre_ms = 0;
+    dt.fun[0xf5].time_cnt_ms = 0;
+
+    dt.fun[0xf6].D_Addr = 0xff;
+    dt.fun[0xf6].fre_ms = 0;
+    dt.fun[0xf6].time_cnt_ms = 0;
+
+    dt.fun[0xf7].D_Addr = 0xff;
+    dt.fun[0xf7].fre_ms = 0;
+    dt.fun[0xf7].time_cnt_ms = 0;
+
+    dt.fun[0xf8].D_Addr = 0xff;
+    dt.fun[0xf8].fre_ms = 0;
+    dt.fun[0xf8].time_cnt_ms = 0;
+
+    dt.fun[0xf9].D_Addr = 0xff;
+    dt.fun[0xf9].fre_ms = 0;
+    dt.fun[0xf9].time_cnt_ms = 0;
+
+    dt.fun[0xfa].D_Addr = 0xff;
+    dt.fun[0xfa].fre_ms = 0;
+    dt.fun[0xfa].time_cnt_ms = 0;
 }
 
 void ANO_DT_String(uint8_t color, const char *str)
@@ -68,6 +108,22 @@ void ANO_DT_String(uint8_t color, const char *str)
     string_to_send.str[0] = color;
 
     dt.fun[0xa0].WTS = 1;
+}
+
+_flexible_frame_st flexible_frame[10];
+
+/**
+ * @brief 灵活格式帧发送 LSB
+ * @param id 0xF1~0xFA
+ * @param len 数据长度1~40
+ * @param data 待发送数据LSB
+ */
+void Send_User_Data(uint8_t id, uint8_t len, uint8_t *data)
+{
+    flexible_frame[id - 0xf1].data_len = len;
+    memcpy(flexible_frame[id - 0xf1].data_buffer, data, len);
+
+    dt.fun[id].WTS = 1;
 }
 
 //数据发送接口
@@ -329,6 +385,76 @@ static void Add_Send_Data(uint8_t frame_num, uint8_t *_cnt, uint8_t send_buffer[
             }
         }
             break;;
+        case 0xf1: //灵活格式帧0xf1
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf2: //灵活格式帧0xf2
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf3: //灵活格式帧0xf3
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf4: //灵活格式帧0xf4
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf5: //灵活格式帧0xf5
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf6: //灵活格式帧0xf6
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf7: //灵活格式帧0xf7
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf8: //灵活格式帧0xf8
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xf9: //灵活格式帧0xf9
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
+        case 0xfa: //灵活格式帧0xfa
+        {
+            for (int i = 0; i < flexible_frame[frame_num - 0xf1].data_len; ++i) {
+                send_buffer[(*_cnt)++] = flexible_frame[frame_num - 0xf1].data_buffer[i];
+            }
+        }
+            break;
         case 0xe2: //PARA返回
         {
             temp_data = dt.par_data.par_id;
@@ -466,4 +592,14 @@ void ANO_LX_Data_Exchange_Task(float dT_s)
     Check_To_Send(0xe2);
     Check_To_Send(0x0d);
     Check_To_Send(0xa0);
+    Check_To_Send(0xf1);
+    Check_To_Send(0xf2);
+    Check_To_Send(0xf3);
+    Check_To_Send(0xf4);
+    Check_To_Send(0xf5);
+    Check_To_Send(0xf6);
+    Check_To_Send(0xf7);
+    Check_To_Send(0xf8);
+    Check_To_Send(0xf9);
+    Check_To_Send(0xfa);
 }
