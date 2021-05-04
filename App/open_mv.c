@@ -96,9 +96,9 @@ void omv_data_analysis(uint8_t *data, uint8_t len) {
 
                 if (_tmp_line[i].angle > 160 || _tmp_line[i].angle < 30) {
                     if (_tmp_line[i].angle > 90) {
-                        omv.raw_data.line.angle = (_tmp_line[i].angle - 175);
+                        omv.raw_data.line.angle = (_tmp_line[i].angle - 180);
                     } else {
-                        omv.raw_data.line.angle = _tmp_line[i].angle+5;
+                        omv.raw_data.line.angle = _tmp_line[i].angle;
                     }
 //                if(opmv.lt.angle > -5 && opmv.lt.angle < 5){
 //                    opmv.lt.angle = 0;
