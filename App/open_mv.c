@@ -150,7 +150,7 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                     _tmp_line[i].len = data[6 * num_block + 5 + 6 * i + 4];
                     _tmp_line[i].angle = data[6 * num_block + 5 + 6 * i + 5];
 
-                    if (_tmp_line[i].angle > 160 || _tmp_line[i].angle < 30) {
+                    if (_tmp_line[i].angle > 160 || _tmp_line[i].angle < 20) {
                         if (_tmp_line[i].angle > 90) {
                             omv.raw_data.line.angle = _tmp_line[i].angle - 180;
                         } else {

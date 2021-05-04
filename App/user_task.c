@@ -16,20 +16,22 @@
 
 extern _rt_tar_un rt_tar;
 extern uint16_t ano_mode;
+uint16_t now_delay = 0;
 
 uint8_t omv_find_detection() {
     static uint16_t omv_lose;
     if (omv.online == 1 && omv.raw_data.find == 0) {
         light_check(LX_LED, RGB_R);
         omv_lose++;
-    } else if (omv.online == 1 && omv.raw_data.find == 1) {
+    }
+    if (omv.online == 1 && omv.raw_data.find == 1) {
         omv_lose = 0;
     }
     if (omv.online == 0) {
         light_check(USER_LED, RGB_R);
         omv_lose++;
     }
-    if (omv_lose > (3000 / process_dt_ms)) {
+    if (omv_lose > (10000 / process_dt_ms)) {
         return Mission_over;
     }
     return 0;
@@ -146,7 +148,6 @@ void light_check(uint8_t group, uint8_t color) {
 }
 
 uint8_t process_delay(uint16_t delay_ms) {
-    static uint16_t now_delay = 0;
     if (now_delay >= delay_ms) {
         now_delay = 0;
         return delay_finish;
@@ -194,7 +195,7 @@ void process_control() {
     static uint16_t ready = 0;
     static uint8_t mission_finish, block_f = 0;
     static uint16_t omv_lose, last_offset = 0;
-    static float pid_angle,pid_vy;
+    static float pid_angle, pid_vy;
     static uint16_t move_angle = 0;
 
     if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
@@ -204,6 +205,7 @@ void process_control() {
     } else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 1500) {
         mission_flag = 0;
         mission_step = 0;
+        now_delay = 0;
         ready = 1;
     }
     if (mission_step != 0 && mission_flag == 1) {
@@ -223,38 +225,57 @@ void process_control() {
             if (omv.online == 1) {
                 if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
                     omv.raw_data.data_flushed = 0;
-                    if (omv.raw_data.type == OMV_DATA_LINE) {
+                    if (omv.raw_data.type == OMV_DATA_LINE || omv.raw_data.type == OMV_DATA_BOTH) {
                         light_check(LX_LED, RGB_G);
-                        if (ABS(omv.raw_data.line.angle) > 10) {
-                            pid_angle= PID_PositionalRealize(&PID_PositionalLine_angle,omv.raw_data.line.angle,0);
-                            pid_vy= PID_PositionalRealize(&PID_PositionalLine_vy,,0);
-                            move_angle=(int)(omv.raw_data.line.angle+ atan2(pid_vy,40)/3.14*180);
-                            if (pid_angle<0) {
-                                Left_Rotate(10, ABS(pid_angle));
-                                Horizontal_Move(40,40,move_angle);
-//                                Horizontal_Move(30, 40, 360 + omv.raw_data.line.angle+PID_PositionalRealize(&PID_PositionalLine_angle, speed[0], setSpeed[0]);
+                        if (omv.raw_data.line.angle>0||omv.raw_data.line.angle>0<-10) {
+                            pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, -5);
+                            pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
+                                                           omv.line_track_data.offset_decoupled_lpf, 0);
+                            move_angle = (int) (ABS(omv.raw_data.line.angle) + atan2(ABS(pid_vy), 5) / 3.14 * 180-5);
+                            if (pid_angle < 0) {
+                                Left_Rotate(5, ABS(pid_angle));
+                                Horizontal_Move(40, 20, 360 - move_angle);
                                 light_check(USER_LED, RGB_B);
                             }
-                            if (pid_angle>0) {
-                                Right_Rotate(10, ABS(pid_angle));
-                                Horizontal_Move(40,40,move_angle);
+                            if (pid_angle > 0) {
+                                Right_Rotate(5, ABS(pid_angle));
+                                Horizontal_Move(40, 20, move_angle);
                                 light_check(USER_LED, RGB_G);
                             }
-                        } else{
-                            Horizontal_Move(30, 40, 0);
+                        } else {
+                            Horizontal_Move(30, 20, 0);
+                            Left_Rotate(0, 0);
+                            light_check(USER_LED, RGB_R);
+                        }
+                        if (omv.raw_data.type == OMV_DATA_BOTH) {
+                            if (process_delay(2000) == delay_finish) {
+                                mission_step++;
+                            }
+                        }
+                    } else if (omv.raw_data.type == OMV_DATA_BLOCK) {
+                        light_check(LX_LED, RGB_B);
+                        if (process_delay(6000) == delay_finish) {
+                            mission_step++;
+                        } else {
+                            Horizontal_Move(30, 20, 0);
+                            Left_Rotate(0, 0);
+                            light_check(USER_LED, RGB_R);
                         }
                     }
-                    if (omv.raw_data.type == OMV_DATA_BLOCK && process_delay(10000) == delay_finish) {
-                        mission_step++;
-                    }
                 }
-                if (omv.online == 1 && (omv.raw_data.find == 0 || omv.raw_data.type == OMV_DATA_BLOCK)) {
-                    Horizontal_Move(30, 40, 0);
+                if (omv.raw_data.find == 0) {
+                    Horizontal_Move(30, 20, 0);
+                    Left_Rotate(0, 0);
+                    light_check(USER_LED, RGB_R);
                 }
             }
             if (omv_find_detection() == Mission_over) {
                 mission_step = Mission_over;
             }
+            process_delay(2000);
+        } else if (mission_step == 3) {
+            OneKey_Hover();
+            light_check(LX_LED, NONE);
         } else if (mission_step == Mission_over) {
             OneKey_Land();
             mission_step = 0;
