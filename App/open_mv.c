@@ -4,6 +4,7 @@
 
 #include "open_mv.h"
 #include "ano_lx_state.h"
+#include "ano_math.h"
 #include <math.h>
 
 #define OMV_OFFLINE_TIMEOUT 1000
@@ -101,7 +102,7 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                 if (omv.raw_data.find) {
                     num_block = data[4];
                 } else {
-                    num_block= 0;
+                    num_block = 0;
                 }
 
                 for (int i = 0; i < num_block; ++i) {
@@ -122,7 +123,7 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                 omv.raw_data.type = OMV_DATA_BOTH;
                 omv.raw_data.find = data[3];
 
-                if(omv.raw_data.find){
+                if (omv.raw_data.find) {
                     num_block = data[4];
                     num_line = data[5];
                 }
@@ -141,8 +142,10 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                 }
 
                 for (int i = 0; i < num_line; ++i) {
-                    _tmp_line[i].start_x = ((((int16_t) data[6 * num_block + 5 + 6 * i + 0]) << 8u) | data[6 * num_block + 5 + 6 * i + 1]);
-                    _tmp_line[i].start_y = ((((int16_t) data[6 * num_block + 5 + 6 * i + 2]) << 8u) | data[6 * num_block + 5 + 6 * i + 3]);
+                    _tmp_line[i].start_x = ((((int16_t) data[6 * num_block + 5 + 6 * i + 0]) << 8u) |
+                                            data[6 * num_block + 5 + 6 * i + 1]);
+                    _tmp_line[i].start_y = ((((int16_t) data[6 * num_block + 5 + 6 * i + 2]) << 8u) |
+                                            data[6 * num_block + 5 + 6 * i + 3]);
                     _tmp_line[i].len = data[6 * num_block + 5 + 6 * i + 4];
                     _tmp_line[i].angle = data[6 * num_block + 5 + 6 * i + 5];
 
@@ -172,18 +175,29 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
     }
 }
 
-//void omv_decoupling(uint8_t dt_ms, float rol_deg, float pit_deg)
-//{
-//    switch (omv.raw_data.type) {
-//        case OMV_DATA_LINE:
-//            omv.line_track_data.offset_decoupled = omv.raw_data.line.offset +
-//                                                   PIXEL_PER_CM * tanf(rol_deg / 180.0 * 3.1415926535) *
-//                                                   fc_sta.fc_attitude.alt_add * cosf(rol_deg / 180.0 * 3.1415926935) *
-//                                                   cosf(pit_deg / 180.0 * 3.1415926935);
-//            break;
-//        case OMV_DATA_BLOCK:
-//            omv.block_track_data.offset_x_decoupled;
-//            omv.block_track_data.offset_y_decoupled;
-//            break;
-//    }
-//}
+void omv_decoupling(uint8_t dt_ms, float rol_deg, float pit_deg)
+{
+    float alt_add_decoupled;
+
+    alt_add_decoupled = fc_sta.fc_attitude.alt_add * cosf(rol_deg / 180.0 * 3.1415926935) *
+                        cosf(pit_deg / 180.0 * 3.1415926935);
+
+    switch (omv.raw_data.type) {
+        case OMV_DATA_LINE:
+            omv.line_track_data.offset_decoupled = omv.raw_data.line.offset +
+                                                   PIXEL_PER_CM * tanf(rol_deg / 180.0 * 3.1415926535) *
+                                                   alt_add_decoupled;
+            omv.line_track_data.offset_decoupled = LIMIT(omv.line_track_data.offset_decoupled,-50,50);
+            break;
+        case OMV_DATA_BLOCK:
+            omv.block_track_data.offset_x_decoupled = omv.raw_data.block.center_x +
+            PIXEL_PER_CM * tanf(pit_deg / 180.0 * 3.1415926535) *
+            alt_add_decoupled;
+            omv.block_track_data.offset_y_decoupled = omv.raw_data.block.center_y +
+            PIXEL_PER_CM * tanf(rol_deg / 180.0 * 3.1415926535) *
+            alt_add_decoupled;
+            LIMIT(omv.block_track_data.offset_x_decoupled,-80,80);
+            LIMIT(omv.block_track_data.offset_y_decoupled,-90,90);
+            break;
+    }
+}
