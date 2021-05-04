@@ -230,14 +230,14 @@ void process_control() {
                             pid_vy= PID_PositionalRealize(&PID_PositionalLine_vy,,0);
                             move_angle=(int)(omv.raw_data.line.angle+ atan2(pid_vy,40)/3.14*180);
                             if (pid_angle<0) {
-                                Left_Rotate(ABS(pid_angle), 5);
-                                Horizontal_Move(40,40,--);
+                                Left_Rotate(10, ABS(pid_angle));
+                                Horizontal_Move(40,40,move_angle);
 //                                Horizontal_Move(30, 40, 360 + omv.raw_data.line.angle+PID_PositionalRealize(&PID_PositionalLine_angle, speed[0], setSpeed[0]);
                                 light_check(USER_LED, RGB_B);
                             }
                             if (pid_angle>0) {
-                                Right_Rotate(ABS(pid_angle), 5);
-                                Horizontal_Move(40,40,);
+                                Right_Rotate(10, ABS(pid_angle));
+                                Horizontal_Move(40,40,move_angle);
                                 light_check(USER_LED, RGB_G);
                             }
                         } else{
