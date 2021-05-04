@@ -303,14 +303,27 @@ void fly_s() {
     }
 }
 
-inline void onekey_lock(void) {
+inline void onekey_lock(void)
+{
+    static uint8_t reseted = 0;
+
     if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2000) {
         if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
             FC_Lock();
         }
 
-        fc_sta.onekey_lock_unlocked = 0;
-    } else if (!fc_sta.onekey_lock_unlocked) {
-        fc_sta.onekey_lock_unlocked = 1;
+        if (!reseted) {
+            reseted = 1;
+        }
+
+        fc_sta.esc_output_unlocked = 0;
+    } else if (!fc_sta.esc_output_unlocked && reseted) {
+        fc_sta.esc_output_unlocked = 1;
+    } else {
+        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+            FC_Lock();
+        }
+
+        fc_sta.esc_output_unlocked = 0;
     }
 }
