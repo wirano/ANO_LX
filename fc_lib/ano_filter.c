@@ -250,34 +250,34 @@ float my_hpf_limited(float T, float hz, float x, float zoom, float *zoom_adj)
 }
 
 
-void simple_3d_trans(float ref[VEC_XYZ], float in[VEC_XYZ], float out[VEC_XYZ]) //该函数只有在水平面附近一个有限的范围内正确。
-{
-    static int8_t pn;
-    static float h_tmp_x, h_tmp_y;
+//void simple_3d_trans(float ref[VEC_XYZ], float in[VEC_XYZ], float out[VEC_XYZ]) //该函数只有在水平面附近一个有限的范围内正确。
+//{
+//    static int8_t pn;
+//    static float h_tmp_x, h_tmp_y;
+//
+//    h_tmp_x = my_sqrt(my_pow(ref[Z]) + my_pow(ref[Y]));
+//    h_tmp_y = my_sqrt(my_pow(ref[Z]) + my_pow(ref[X]));
+//
+//    pn = ref[Z] < 0 ? -1 : 1;
+//
+//    out[X] = (h_tmp_x * in[X] - pn * ref[X] * in[Z]);
+//    out[Y] = (pn * h_tmp_y * in[Y] - ref[Y] * in[Z]);
+//
+//// 	 out[X] = h_tmp_x *in[X] - ref[X] *in[Z];
+//// 	 out[Y] = ref[Z] *in[Y] - ref[Y] *in[Z];
+//
+//    out[Z] = ref[X] * in[X] + ref[Y] * in[Y] + ref[Z] * in[Z];
+//}
 
-    h_tmp_x = my_sqrt(my_pow(ref[Z]) + my_pow(ref[Y]));
-    h_tmp_y = my_sqrt(my_pow(ref[Z]) + my_pow(ref[X]));
-
-    pn = ref[Z] < 0 ? -1 : 1;
-
-    out[X] = (h_tmp_x * in[X] - pn * ref[X] * in[Z]);
-    out[Y] = (pn * h_tmp_y * in[Y] - ref[Y] * in[Z]);
-
-// 	 out[X] = h_tmp_x *in[X] - ref[X] *in[Z];
-// 	 out[Y] = ref[Z] *in[Y] - ref[Y] *in[Z];
-
-    out[Z] = ref[X] * in[X] + ref[Y] * in[Y] + ref[Z] * in[Z];
-}
-
-void vec_3dh_transition(float ref[VEC_XYZ], float in[VEC_XYZ], float out[VEC_XYZ])
-{
-    simple_3d_trans(ref, in, out); //
-}
-
-void vec_3dh_transition_matrix(float ref[VEC_XYZ], float wh_matrix[VEC_XYZ][VEC_XYZ])
-{
-
-}
+//void vec_3dh_transition(float ref[VEC_XYZ], float in[VEC_XYZ], float out[VEC_XYZ])
+//{
+//    simple_3d_trans(ref, in, out); //
+//}
+//
+//void vec_3dh_transition_matrix(float ref[VEC_XYZ], float wh_matrix[VEC_XYZ][VEC_XYZ])
+//{
+//
+//}
 
 
 //#define M_PI_F 3.14159f
