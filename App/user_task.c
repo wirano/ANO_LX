@@ -6,6 +6,7 @@
 #include "drv_rc_in.h"
 #include "ano_lx_function.h"
 #include "ano_lx_state.h"
+#include "drv_buzzer.h"
 
 void one_key_takeoff_land(uint16_t dt_ms)
 {
@@ -87,7 +88,7 @@ inline void onekey_lock(void)
 {
     static uint8_t reseted = 0;
 
-    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2000) {
+    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] == 1000) {
         if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
             FC_Lock();
         }
@@ -99,7 +100,7 @@ inline void onekey_lock(void)
         fc_sta.esc_output_unlocked = 0;
     } else if (!fc_sta.esc_output_unlocked && reseted) {
         fc_sta.esc_output_unlocked = 1;
-    } else {
+    } else if(!reseted){
         if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
             FC_Lock();
         }
