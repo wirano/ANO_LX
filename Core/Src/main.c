@@ -80,6 +80,17 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#ifdef __GNUC__
+#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+#else
+#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+#endif
+
+PUTCHAR_PROTOTYPE {
+    while ((USART1->SR & 0X40U) == 0);
+    UART4->DR = (uint8_t) ch;
+    return ch;
+}
 
 /* USER CODE END 0 */
 
@@ -896,7 +907,7 @@ void MX_UART4_Init(void)
 
   /* USER CODE END UART4_Init 1 */
   huart4.Instance = UART4;
-  huart4.Init.BaudRate = 500000;
+  huart4.Init.BaudRate = 115200;
   huart4.Init.WordLength = UART_WORDLENGTH_8B;
   huart4.Init.StopBits = UART_STOPBITS_1;
   huart4.Init.Parity = UART_PARITY_NONE;
@@ -1113,7 +1124,7 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, USER_LED_R_Pin|USER_LED_G_Pin|key0_Pin|IO3_Pin
-                          |IO4_Pin|ANO_RGB_R_Pin|ANO_RGB_G_Pin|ANO_RGB_B_Pin
+                          |IO4_Pin|ANO_RGB_B_Pin|ANO_RGB_R_Pin|ANO_RGB_G_Pin
                           |ANO_LED_OB_Pin|USER_LED_B_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -1131,10 +1142,10 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, IO10_Pin|IO11_Pin|IO12_Pin|IO13_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : USER_LED_R_Pin USER_LED_G_Pin ANO_RGB_R_Pin ANO_RGB_G_Pin
-                           ANO_RGB_B_Pin USER_LED_B_Pin */
-  GPIO_InitStruct.Pin = USER_LED_R_Pin|USER_LED_G_Pin|ANO_RGB_R_Pin|ANO_RGB_G_Pin
-                          |ANO_RGB_B_Pin|USER_LED_B_Pin;
+  /*Configure GPIO pins : USER_LED_R_Pin USER_LED_G_Pin ANO_RGB_B_Pin ANO_RGB_R_Pin
+                           ANO_RGB_G_Pin USER_LED_B_Pin */
+  GPIO_InitStruct.Pin = USER_LED_R_Pin|USER_LED_G_Pin|ANO_RGB_B_Pin|ANO_RGB_R_Pin
+                          |ANO_RGB_G_Pin|USER_LED_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
