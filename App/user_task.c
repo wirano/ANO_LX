@@ -88,7 +88,7 @@ inline void onekey_lock(void)
 {
     static uint8_t reseted = 0;
 
-    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] == 1000) {
+    if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000) {
         if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
             FC_Lock();
         }
