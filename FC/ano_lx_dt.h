@@ -53,10 +53,16 @@ typedef struct
     _par_st par_data;
 } _dt_st;
 
-typedef struct {
+typedef struct
+{
     uint8_t str[MAX_DATA_LEN];
     uint8_t str_len;
 } _dt_string_st;
+
+typedef struct {
+    uint8_t data_buffer[40];
+    uint8_t data_len; //byte
+}_flexible_frame_st;
 
 //==数据声明
 extern _dt_st dt;
@@ -83,5 +89,7 @@ void CK_Back(uint8_t dest_addr, _ck_st *ck);
 void PAR_Back(uint8_t dest_addr, _par_st *par);
 
 void ANO_DT_String(uint8_t color, const char *str);
+
+void Send_User_Data(uint8_t id, uint8_t len, uint8_t *data);
 
 #endif //ANO_LX_DT_H

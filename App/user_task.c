@@ -10,6 +10,7 @@
 #include "ano_lx.h"
 #include "ano_lx_function.h"
 #include "ano_lx_state.h"
+#include "drv_buzzer.h"
 #include "ano_math.h"
 #include "PID.h"
 #include <math.h>
@@ -109,6 +110,7 @@ void one_key_takeoff_land() {
     }
     ////////////////////////////////////////////////////////////////////////
 }
+
 
 void light_check(uint8_t group, uint8_t color) {
     if (group == LX_LED) {
@@ -227,7 +229,7 @@ void process_control() {
                         light_check(LX_LED, RGB_G);
                         if (ABS(omv.raw_data.line.angle) > 10) {
                             pid_angle= PID_PositionalRealize(&PID_PositionalLine_angle,omv.raw_data.line.angle,0);
-                            pid_vy= PID_PositionalRealize(&PID_PositionalLine_vy,,0);
+//                            pid_vy= PID_PositionalRealize(&PID_PositionalLine_vy,,0);
                             move_angle=(int)(omv.raw_data.line.angle+ atan2(pid_vy,40)/3.14*180);
                             if (pid_angle<0) {
                                 Left_Rotate(10, ABS(pid_angle));
@@ -282,14 +284,27 @@ void fly_s() {
     }
 }
 
-inline void onekey_lock(void) {
-    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2000) {
+inline void onekey_lock(void)
+{
+    static uint8_t reseted = 0;
+
+    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] == 1000) {
         if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
             FC_Lock();
         }
 
-        fc_sta.onekey_lock_unlocked = 0;
-    } else if (!fc_sta.onekey_lock_unlocked) {
-        fc_sta.onekey_lock_unlocked = 1;
+        if (!reseted) {
+            reseted = 1;
+        }
+
+        fc_sta.esc_output_unlocked = 0;
+    } else if (!fc_sta.esc_output_unlocked && reseted) {
+        fc_sta.esc_output_unlocked = 1;
+    } else if(!reseted) {
+        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+            FC_Lock();
+        }
+
+        fc_sta.esc_output_unlocked = 0;
     }
 }

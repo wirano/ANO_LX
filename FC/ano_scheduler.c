@@ -8,12 +8,14 @@
 #include "open_mv.h"
 #include "ano_lx_dt.h"
 #include "drv_led.h"
+#include "drv_buzzer.h"
 
 
 static void Loop_1000Hz(void) //1ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
 //    user_rgb_drv();
+    buzzer_drv(1);
     //////////////////////////////////////////////////////////////////////
 }
 
@@ -34,14 +36,14 @@ static void Loop_200Hz(void) //5ms执行一次
 static void Loop_100Hz(void) //10ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-//    user_rgb_update(10);
+    user_rgb_update(10);
     //////////////////////////////////////////////////////////////////////
 }
 
 static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-//    user_rgb_tasks(20);
+    user_rgb_tasks(20);
     process_control();
     omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
     omv_offline_check(20);
