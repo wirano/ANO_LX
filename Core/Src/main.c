@@ -87,7 +87,7 @@ void SystemClock_Config(void);
 #endif
 
 PUTCHAR_PROTOTYPE {
-    while ((USART1->SR & 0X40U) == 0);
+    while ((UART4->SR & 0X40U) == 0);
     UART4->DR = (uint8_t) ch;
     return ch;
 }
