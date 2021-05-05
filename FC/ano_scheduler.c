@@ -8,6 +8,7 @@
 #include "open_mv.h"
 #include "ano_lx_dt.h"
 #include "drv_led.h"
+#include "drv_buzzer.h"
 
 
 static void Loop_1000Hz(void) //1ms执行一次

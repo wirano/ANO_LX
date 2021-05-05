@@ -10,9 +10,12 @@
 #include "drv_tim_lx.h"
 #include "ano_lx_dt.h"
 #include "drv_uart.h"
+#include "drv_buzzer.h"
 
 uint8_t All_Init()
 {
+    //关闭蜂鸣器
+    buzzer.freq = 200;
     //LED功能初始化
     MX_GPIO_Init();
     //初始化电调输出功能
