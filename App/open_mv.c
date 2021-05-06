@@ -10,7 +10,7 @@
 
 #define OMV_OFFLINE_TIMEOUT 1000
 
-#define PIXEL_PER_CM 0.14f  //每厘米对应像素数，与高度焦距有关，需标定
+#define PIXEL_PER_CM 1.7f  //每厘米对应像素数，与高度焦距有关，需标定
 
 omv_st omv;
 
@@ -76,16 +76,16 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                 }
 
                 for (int i = 0; i < num_line; ++i) {
-                    _tmp_line[i].start_x = ((((int16_t) data[5 + 6 * i + 0]) << 8u) | data[5 + 6 * i + 1]);
-                    _tmp_line[i].start_y = ((((int16_t) data[5 + 6 * i + 2]) << 8u) | data[5 + 6 * i + 3]);
+                    _tmp_line[i].start_x = ((((int16_t) data[5 + 6 * i + 0]) << 8u) | data[5 + 6 * i + 1])-160;
+                    _tmp_line[i].start_y = ((((int16_t) data[5 + 6 * i + 2]) << 8u) | data[5 + 6 * i + 3])-120;
                     _tmp_line[i].len = data[5 + 6 * i + 4];
                     _tmp_line[i].angle = data[5 + 6 * i + 5];
 
-                    if (_tmp_line[i].angle > 170 || _tmp_line[i].angle < 20) {
+                    if (_tmp_line[i].angle > 160 || _tmp_line[i].angle < 20) {
                         if (_tmp_line[i].angle > 90) {
-                            omv.raw_data.line.angle = (180 - _tmp_line[i].angle);
+                            omv.raw_data.line.angle = _tmp_line[i].angle-180;
                         } else {
-                            omv.raw_data.line.angle = -_tmp_line[i].angle;
+                            omv.raw_data.line.angle = _tmp_line[i].angle;
                         }
 //                if(opmv.lt.angle > -5 && opmv.lt.angle < 5){
 //                    opmv.lt.angle = 0;
@@ -108,8 +108,8 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
 
                 for (int i = 0; i < num_block; ++i) {
                     _tmp_block[i].shape = data[5 + 6 * i + 0];
-                    _tmp_block[i].center_x = ((((int16_t) data[5 + 6 * i + 1]) << 8u) | data[5 + 6 * i + 2]);
-                    _tmp_block[i].center_y = ((((int16_t) data[5 + 6 * i + 3]) << 8u) | data[5 + 6 * i + 4]);
+                    _tmp_block[i].center_x = ((((int16_t) data[5 + 6 * i + 1]) << 8u) | data[5 + 6 * i + 2])-160;
+                    _tmp_block[i].center_y = ((((int16_t) data[5 + 6 * i + 3]) << 8u) | data[5 + 6 * i + 4])-120;
                     _tmp_block[i].color = data[5 + 6 * i + 5];
 
                     if (_tmp_block[i].shape == OMV_SHAPE_CIRCLE) {
@@ -131,8 +131,8 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
 
                 for (int i = 0; i < num_block; ++i) {
                     _tmp_block[i].shape = data[6 + 6 * i + 0];
-                    _tmp_block[i].center_x = ((((int16_t) data[6 + 6 * i + 1]) << 8u) | data[6 + 6 * i + 2]);
-                    _tmp_block[i].center_y = ((((int16_t) data[6 + 6 * i + 3]) << 8u) | data[6 + 6 * i + 4]);
+                    _tmp_block[i].center_x = ((((int16_t) data[6 + 6 * i + 1]) << 8u) | data[6 + 6 * i + 2])-160;
+                    _tmp_block[i].center_y = ((((int16_t) data[6 + 6 * i + 3]) << 8u) | data[6 + 6 * i + 4])-120;
                     _tmp_block[i].color = data[6 + 6 * i + 5];
 
                     if (_tmp_block[i].shape == OMV_SHAPE_CIRCLE) {

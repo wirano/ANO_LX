@@ -9,7 +9,7 @@
 PID_PositionalTypeDef PID_PositionalLine_vy ={
         .Ki_Limit=0,
         .Ki_Separation=0,
-        .Kp=1,
+        .Kp=0.5,
         .Ki=0,
         .Kd=0,
 };
@@ -17,7 +17,7 @@ PID_PositionalTypeDef PID_PositionalLine_vy ={
 PID_PositionalTypeDef PID_PositionalLine_angle ={
         .Ki_Limit=0,
         .Ki_Separation=0,
-        .Kp=-1,
+        .Kp=0.03,
         .Ki=0,
         .Kd=0,
 };

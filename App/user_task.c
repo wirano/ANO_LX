@@ -31,7 +31,7 @@ uint8_t omv_find_detection() {
         light_check(USER_LED, RGB_R);
         omv_lose++;
     }
-    if (omv_lose > (10000 / process_dt_ms)) {
+    if (omv_lose > (2000 / process_dt_ms)) {
         return Mission_over;
     }
     return 0;
@@ -226,18 +226,17 @@ void process_control() {
                 if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
                     omv.raw_data.data_flushed = 0;
                     if (omv.raw_data.type == OMV_DATA_LINE || omv.raw_data.type == OMV_DATA_BOTH) {
-                        light_check(LX_LED, RGB_G);
-                        if (omv.raw_data.line.angle>0||omv.raw_data.line.angle>0<-10) {
-                            pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, -5);
+                        if (ABS(omv.raw_data.line.angle>5||omv.line_track_data.offset_decoupled_lpf>5)) {
+                            pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, 0);
                             pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
                                                            omv.line_track_data.offset_decoupled_lpf, 0);
-                            move_angle = (int) (ABS(omv.raw_data.line.angle) + atan2(ABS(pid_vy), 5) / 3.14 * 180-5);
-                            if (pid_angle < 0) {
+                            move_angle = (int) (ABS(omv.raw_data.line.angle) + atan2(ABS(pid_vy), 5) / 3.14 * 180);
+                            if (pid_angle > 0) {
                                 Left_Rotate(5, ABS(pid_angle));
                                 Horizontal_Move(40, 20, 360 - move_angle);
                                 light_check(USER_LED, RGB_B);
                             }
-                            if (pid_angle > 0) {
+                            if (pid_angle < 0) {
                                 Right_Rotate(5, ABS(pid_angle));
                                 Horizontal_Move(40, 20, move_angle);
                                 light_check(USER_LED, RGB_G);
@@ -248,14 +247,16 @@ void process_control() {
                             light_check(USER_LED, RGB_R);
                         }
                         if (omv.raw_data.type == OMV_DATA_BOTH) {
+                            light_check(LX_LED, RGB_B);
                             if (process_delay(2000) == delay_finish) {
                                 mission_step++;
-                            }
+                            } else
+                                light_check(LX_LED, RGB_G);
                         }
                     } else if (omv.raw_data.type == OMV_DATA_BLOCK) {
                         light_check(LX_LED, RGB_B);
-                        if (process_delay(6000) == delay_finish) {
-                            mission_step++;
+                        if (process_delay(2000) == delay_finish) {
+                            mission_step ++;
                         } else {
                             Horizontal_Move(30, 20, 0);
                             Left_Rotate(0, 0);
@@ -319,11 +320,12 @@ inline void onekey_lock(void)
         fc_sta.esc_output_unlocked = 0;
     } else if (!fc_sta.esc_output_unlocked && reseted) {
         fc_sta.esc_output_unlocked = 1;
-    } else {
-        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
-            FC_Lock();
-        }
-
-        fc_sta.esc_output_unlocked = 0;
     }
+//    } else {
+//        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+//            FC_Lock();
+//        }
+//
+//        fc_sta.esc_output_unlocked = 0;
+//    }
 }
