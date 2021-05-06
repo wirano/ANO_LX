@@ -11,12 +11,13 @@
 #include "drv_buzzer.h"
 #include "ano_lx_function.h"
 #include "stdio.h"
+#include "drv_ano_of.h"
 
 
 static void Loop_1000Hz(void) //1ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-//    user_rgb_drv();
+    user_rgb_drv();
     buzzer_drv(1);
     //////////////////////////////////////////////////////////////////////
 }
@@ -61,7 +62,7 @@ static void Loop_20Hz(void) //50ms执行一次
 
 static void Loop_10Hz(void) //100ms执行一次
 {
-    TestHeightSet(10);
+//    TestHeightSet(10);
 }
 
 static void Loop_5Hz(void) //200ms执行一次
@@ -72,7 +73,7 @@ static void Loop_5Hz(void) //200ms执行一次
 static void Loop_2Hz(void) //500ms执行一次
 {
 //    test_api(500);
-    printf("Test\r\n");
+//    printf("H=%d\r\n",ano_of.of_alt_cm);
 }
 
 //////////////////////////////////////////////////////////////////////

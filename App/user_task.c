@@ -14,9 +14,10 @@
 #include "ano_math.h"
 #include "PID.h"
 #include <math.h>
+#include <stdio.h>
 
 extern _rt_tar_un rt_tar;
-extern uint16_t ano_mode;
+extern uint16_t ano_mod;
 
 uint8_t omv_find_detection() {
     static uint16_t omv_lose;
@@ -309,26 +310,22 @@ inline void onekey_lock(void)
     }
 }
 
-void TestHeightSet(uint16_t Hz)
-{
-    static uint16_t ActionNumbers=0;
-
-    if(ActionNumbers==0)
-    {
-        Vertical_Rising(100,20);
-        Wait(Hz,3,&ActionNumbers);
-    }
-    else if(ActionNumbers==1)
-    {
-        Vertical_Declining(30,15);
-        Wait(Hz,3,&ActionNumbers);
-    }
-    else if(ActionNumbers==2)
-    {
-
-    }
-    else if(ActionNumbers==3)
-    {
-
-    }
-}
+////测试高度设定函数
+//void TestHeightSet(uint16_t Hz)
+//{
+//    static uint16_t ActionNumbers=0;
+//
+//    if(ano_mod==3)
+//    {
+//        if(ActionNumbers==0)
+//        {
+//            if( HeightSet(100)==1)
+//            {
+//                ActionNumbers++;
+//            }
+//        }
+//        else if(ActionNumbers==1)
+//        {
+//        }
+//    }
+//}

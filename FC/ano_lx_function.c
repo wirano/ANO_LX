@@ -7,6 +7,7 @@
 #include "ano_lx_dt.h"
 #include "ano_math.h"
 #include "drv_ano_of.h"
+#include <stdio.h>
 
 
 uint8_t FC_Unlock()
@@ -290,14 +291,14 @@ uint8_t HeightSet(uint16_t height)
 {
     uint8_t PermissibleError=2;    //允许的高度误差
 
-    if( (height-ano_of.of_alt_cm)>PermissibleError )
+    if( (int32_t)(height-ano_of.of_alt_cm)>PermissibleError )
     {
         Vertical_Rising( 100,LIMIT(0.4*(height-ano_of.of_alt_cm),0,30) );
         Horizontal_Move(0,0,0);
 
         return 0;
     }
-    else if( (height-ano_of.of_alt_cm)<(-PermissibleError) )
+    else if( (int32_t)(height-ano_of.of_alt_cm)<(0-PermissibleError) )
     {
         Vertical_Declining(100,LIMIT(-0.4*(height-ano_of.of_alt_cm),0,30));
         Horizontal_Move(0,0,0);
