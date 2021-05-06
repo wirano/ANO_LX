@@ -9,6 +9,7 @@
 #include "ano_lx_dt.h"
 #include "drv_led.h"
 #include "drv_buzzer.h"
+#include "ano_lx_function.h"
 
 
 static void Loop_1000Hz(void) //1ms执行一次
@@ -44,9 +45,9 @@ static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
     user_rgb_tasks(20);
-    process_control();
-    omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
-    omv_offline_check(20);
+//    process_control();
+//    omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
+//    omv_offline_check(20);
     //////////////////////////////////////////////////////////////////////
 }
 
