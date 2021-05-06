@@ -38,6 +38,7 @@ _fc_bat_un fc_bat;
 //////////////////////////////////////////////////////////////////////
 
 //遥控器数据处理
+uint16_t ano_mod;
 static inline void RC_Data_Task(float dT_s)
 {
     static uint8_t fail_safe_change_mod, fail_safe_return_home;
@@ -45,6 +46,12 @@ static inline void RC_Data_Task(float dT_s)
     static uint16_t mod_f_time_cnt;
 
     //有遥控信号且没有失控标记才执行
+    float tmp_ch_dz[4];
+    tmp_ch_dz[ch_1_rol] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_1_rol] - 1500), 0, 40);
+    tmp_ch_dz[ch_2_pit] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_2_pit] - 1500), 0, 40);
+    tmp_ch_dz[ch_3_thr] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_3_thr] - 1500), 0, 80);
+    tmp_ch_dz[ch_4_yaw] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_4_yaw] - 1500), 0, 80);
+
     if (rc_in.no_signal == 0 && rc_in.fail_safe == 0)
     {
         //摇杆数据设置模式（姿态+气压定高，定高定点，程控）
@@ -54,7 +61,7 @@ static inline void RC_Data_Task(float dT_s)
             LX_Change_Mode(1);
             mod_f[0] = 1;
         }
-        else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1700)
+        else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1700||(ABS(tmp_ch_dz[ch_1_rol])>10)||(ABS(tmp_ch_dz[ch_2_pit])>10)||(ABS(tmp_ch_dz[ch_3_thr])>10)||(ABS(tmp_ch_dz[ch_4_yaw])>10))
         {
             LX_Change_Mode(2);
             mod_f[0] = 2;
@@ -65,6 +72,7 @@ static inline void RC_Data_Task(float dT_s)
             mod_f[0] = 3;
         }
         //有切换模式时执行
+        ano_mod=mod_f[0];
         if (mod_f[1] != mod_f[0])
         {
             mod_f[1] = mod_f[0];
@@ -104,11 +112,7 @@ static inline void RC_Data_Task(float dT_s)
 
         //摇杆数据转换物理控制量
         //摇杆数据转换到+-500并加死区
-        float tmp_ch_dz[4];
-        tmp_ch_dz[ch_1_rol] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_1_rol] - 1500), 0, 40);
-        tmp_ch_dz[ch_2_pit] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_2_pit] - 1500), 0, 40);
-        tmp_ch_dz[ch_3_thr] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_3_thr] - 1500), 0, 80);
-        tmp_ch_dz[ch_4_yaw] = my_deadzone((rc_in.rc_ch.st_data.ch_[ch_4_yaw] - 1500), 0, 80);
+
         //准备上锁时，ROL,PIT,YAW无效
         if (sti_fun.pre_locking)
         {
@@ -277,5 +281,5 @@ void ANO_LX_Task()
     //电调输出
     ESC_Output(fc_sta.esc_output_unlocked); //unlocked
     //灯光驱动
-    LED_1ms_DRV();
+//    LED_1ms_DRV();
 }
