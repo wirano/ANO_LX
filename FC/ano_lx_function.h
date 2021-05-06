@@ -43,4 +43,6 @@ uint8_t ACC_Calibrate(void);
 
 uint8_t GYR_Calibrate(void);
 
+void Wait(uint16_t Hz,uint16_t time_s,uint16_t *actions_number);
+
 #endif //ANO_LX_FUNCTION_H

@@ -297,7 +297,7 @@ uint8_t HeightSet(uint16_t height)
 
         return 0;
     }
-    else if( (height-ano_of.of_alt_cm)<-PermissibleError )
+    else if( (height-ano_of.of_alt_cm)<(-PermissibleError) )
     {
         Vertical_Declining(100,LIMIT(-0.4*(height-ano_of.of_alt_cm),0,30));
         Horizontal_Move(0,0,0);
@@ -377,5 +377,20 @@ uint8_t GYR_Calibrate()
         return 1;
     } else {
         return 0;
+    }
+}
+
+void Wait(uint16_t Hz,uint16_t time_s,uint16_t *actions_number)
+{
+    static uint16_t TimeCount=0;
+
+    if( TimeCount<(Hz*time_s) )
+    {
+        TimeCount++;
+    }
+    else
+    {
+        (*actions_number)++;
+        TimeCount=0;
     }
 }
