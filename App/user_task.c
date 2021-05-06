@@ -308,3 +308,27 @@ inline void onekey_lock(void)
         fc_sta.esc_output_unlocked = 0;
     }
 }
+
+void TestHeightSet(uint16_t Hz)
+{
+    static uint16_t ActionNumbers=0;
+
+    if(ActionNumbers==0)
+    {
+        Vertical_Rising(100,20);
+        Wait(Hz,3,&ActionNumbers);
+    }
+    else if(ActionNumbers==1)
+    {
+        Vertical_Declining(30,15);
+        Wait(Hz,3,&ActionNumbers);
+    }
+    else if(ActionNumbers==2)
+    {
+
+    }
+    else if(ActionNumbers==3)
+    {
+
+    }
+}
