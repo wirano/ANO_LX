@@ -14,29 +14,237 @@
 #include "ano_math.h"
 #include "PID.h"
 #include <math.h>
+#include "drv_led.h"
 #include <stdio.h>
 
 extern _rt_tar_un rt_tar;
 extern uint16_t ano_mod;
-uint16_t now_delay = 0;
+
+Process_Delay Takeoff_delay = {
+        .now_delay=0,
+        .delay_star=0,
+        .ami_delay=0,
+        .delay_finished=0,
+};
+
+Process_Delay Unlock_delay = {
+        .now_delay=0,
+        .delay_star=0,
+        .ami_delay=0,
+        .delay_finished=0,
+};
+
+Process_Delay Block_delay = {
+        .now_delay=0,
+        .delay_star=0,
+        .ami_delay=0,
+        .delay_finished=0,
+};
+
+
+void process_delay() {
+    if (Takeoff_delay.delay_star == 1) {
+        Takeoff_delay.now_delay += process_dt_ms;
+        if (Takeoff_delay.now_delay >= Takeoff_delay.ami_delay) {
+            Takeoff_delay.delay_finished = 1;
+            Takeoff_delay.delay_star = 0;
+        }
+    } else {
+        Takeoff_delay.now_delay = 0;
+        Takeoff_delay.ami_delay = 0;
+    }
+    if (Unlock_delay.delay_star == 1) {
+        Unlock_delay.now_delay += process_dt_ms;
+        if (Unlock_delay.now_delay >= Unlock_delay.ami_delay) {
+            Unlock_delay.delay_finished = 1;
+            Unlock_delay.delay_star = 0;
+        } else {
+            Unlock_delay.now_delay = 0;
+            Unlock_delay.ami_delay = 0;
+        }
+    }
+    if (Block_delay.delay_star == 1) {
+        Block_delay.now_delay += process_dt_ms;
+        if (Block_delay.now_delay >= Block_delay.ami_delay) {
+            Block_delay.delay_finished = 1;
+            Block_delay.delay_star = 0;
+        } else {
+            Block_delay.now_delay = 0;
+            Block_delay.ami_delay = 0;
+        }
+    }
+
+}
+
+void process_control() {
+    static uint16_t mission_flag = 0, mission_step = 0;
+    static uint16_t ready = 0;
+    static uint8_t mission_finish, block_f = 0;
+    static uint16_t omv_lose, last_offset = 0;
+
+    if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
+        //进入程控模式
+        mission_flag = 1;
+        mission_step = 1;
+    } else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 1500) {
+        mission_flag = 0;
+        mission_step = 0;
+        ready = 1;
+        Takeoff_delay.delay_star = 0;
+        Unlock_delay.delay_star = 0;
+        Block_delay.delay_star = 0;
+
+    }
+
+    if (mission_step != 0 && mission_flag == 1) {
+        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
+        omv_led_state.led_num = 4;
+    } else {
+        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
+        omv_led_state.led_num = 0;
+    }//BEEP SWITCH
+
+    if (mission_flag == 1) {
+        if (mission_step == 1) {
+            if (user_takeoff() == 1) {
+                mission_step++;
+            }
+        } //程控起飞
+        else if (mission_step == 2) {
+        } else if (mission_step == 3) {
+            omv_led_state.led4_omv_move = 2;
+            OneKey_Land();
+//            light_check(LX_LED, NONE);
+        } else if (mission_step == Mission_over) {
+            OneKey_Land();
+            mission_step = 0;
+            ready = 0;
+            omv_lose = 0;
+        }
+    }
+}
 
 uint8_t omv_find_detection() {
     static uint16_t omv_lose;
     if (omv.online == 1 && omv.raw_data.find == 0) {
-        light_check(LX_LED, RGB_R);
         omv_lose++;
     }
     if (omv.online == 1 && omv.raw_data.find == 1) {
         omv_lose = 0;
     }
     if (omv.online == 0) {
-        light_check(USER_LED, RGB_R);
         omv_lose++;
     }
-    if (omv_lose > (2000 / process_dt_ms)) {
+    if (omv_lose > (1000 / process_dt_ms)) {
         return Mission_over;
     }
     return 0;
+}
+
+uint8_t omv_find_lines(){
+    static float pid_angle, pid_vy;
+    static uint16_t move_angle = 0;
+    if (omv.online == 1) {
+        if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
+            omv_decoupling(20, fc_sta.fc_attitude.rol, fc_sta.fc_attitude.pit);
+            omv.raw_data.data_flushed = 0;
+            if (omv.raw_data.type == OMV_DATA_LINE || omv.raw_data.type == OMV_DATA_BOTH) {
+                if (ABS(omv.raw_data.line.angle > 5 || omv.line_track_data.offset_decoupled_lpf > 5)) {
+                    pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, 0);
+                    pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
+                                                   omv.line_track_data.offset_decoupled_lpf, 0);
+                    move_angle = (int) (ABS(omv.raw_data.line.angle) + atan2(ABS(pid_vy), 3) / 3.14 * 180);
+                    if (pid_angle > 0) {
+                        Left_Rotate(5, ABS(pid_angle));
+                        Horizontal_Move(40, 20, 360 - move_angle);
+                    }
+                    if (pid_angle < 0) {
+                        Right_Rotate(5, ABS(pid_angle));
+                        Horizontal_Move(40, 20, move_angle);
+                        //TODO:
+                    }
+                } else {
+                    Horizontal_Move(30, 20, 0);
+                    Left_Rotate(0, 0);
+                }
+                if (omv.raw_data.type == OMV_DATA_BOTH) {
+                    omv_led_state.led3_omv_target = 0;
+                    if (process_delay(10000) == delay_finish) {
+                        mission_step++;
+                    }
+                }
+                if (omv.raw_data.type == OMV_DATA_LINE) {
+                    omv_led_state.led3_omv_target = 1;
+                }
+                printf("line offset:%d angle:%d\r\n", (int) omv.raw_data.line.offset, omv.raw_data.line.angle);
+                printf("de line offset:%.2f\r\n", omv.line_track_data.offset_decoupled_lpf);
+            } else if (omv.raw_data.type == OMV_DATA_BLOCK) {
+                omv_led_state.led3_omv_target = 2;
+                if (process_delay(10000) == delay_finish) {
+                    mission_step++;
+                } else {
+                    Horizontal_Move(30, 20, 0);
+                    Left_Rotate(0, 0);
+//                            light_check(USER_LED, RGB_R);
+                }
+//                        printf("block x:%d y:%d\r\n",(int)omv.raw_data.block.center_x,(int)omv.raw_data.block.center_y);
+//                        printf("de block x:%.2f y:%.2f\r\n",omv.block_track_data.offset_x_decoupled_lpf,omv.block_track_data.offset_y_decoupled_lpf);
+            }
+        }
+        if (omv.raw_data.find == 0) {
+            Horizontal_Move(30, 20, 0);
+            Left_Rotate(0, 0);
+//                    light_check(USER_LED, NONE);
+        }
+    }
+    if (omv_find_detection() == Mission_over) {
+        return Mission_err;
+    }
+    return Mission_Unfinished;
+}
+
+uint8_t user_takeoff() {
+    static uint16_t user_takeoff_f = 0, user_unlock_f = 0;
+    if (Unlock_delay.delay_star == 0 && Unlock_delay.delay_finished == 0) {
+        FC_Unlock();
+        Unlock_delay.delay_star = 1;
+        Unlock_delay.ami_delay = 1000;
+    } else if (Unlock_delay.delay_finished == 1 && Takeoff_delay.delay_star == 0 && Takeoff_delay.delay_finished == 0) {
+        OneKey_Takeoff(0); //参数单位：厘米； 0：默认上位机设置的高度。
+        Takeoff_delay.delay_star = 1;
+        Takeoff_delay.ami_delay = 2000;
+    } else if (Takeoff_delay.delay_finished == 1) {
+        Unlock_delay.delay_star = 0;
+        Takeoff_delay.delay_star = 0;
+        Unlock_delay.delay_finished = 0;
+        Takeoff_delay.delay_finished = 0;
+        return Mission_finish;
+    }
+    return Mission_Unfinished;
+}
+
+inline void onekey_lock(void) {
+    static uint8_t reseted = 0;
+
+    if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000) {
+        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+            FC_Lock();
+        }
+
+        if (!reseted) {
+            reseted = 1;
+        }
+
+        fc_sta.esc_output_unlocked = 0;
+    } else if (!fc_sta.esc_output_unlocked && reseted) {
+        fc_sta.esc_output_unlocked = 1;
+    } else if (!reseted) {
+        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+            FC_Lock();
+        }
+
+        fc_sta.esc_output_unlocked = 0;
+    }
 }
 
 void one_key_takeoff_land() {
@@ -114,7 +322,6 @@ void one_key_takeoff_land() {
     ////////////////////////////////////////////////////////////////////////
 }
 
-
 void light_check(uint8_t group, uint8_t color) {
     if (group == LX_LED) {
         HAL_GPIO_WritePin(ANO_RGB_R_GPIO_Port, ANO_RGB_R_Pin, GPIO_PIN_RESET);
@@ -150,145 +357,6 @@ void light_check(uint8_t group, uint8_t color) {
     }
 }
 
-uint8_t process_delay(uint16_t delay_ms) {
-    if (now_delay >= delay_ms) {
-        now_delay = 0;
-        return delay_finish;
-    } else {
-        now_delay += process_dt_ms;
-        return delay_Unfinished;
-    }
-}
-
-uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360) {
-    static uint16_t fly_f = 0;
-    if (fly_f == 0) {
-        fly_f = 1;
-        Horizontal_Move(distance_cm, velocity, dir_angle_0_360);
-        process_delay(distance_cm / velocity * 1000);
-    } else if (process_delay(distance_cm / velocity * 1000) == delay_finish) {
-        fly_f = 0;
-        return Mission_finish;
-    }
-    return Mission_Unfinished;
-}
-
-uint8_t user_takeoff() {
-    static uint16_t user_takeoff_f = 0, user_unlock_f = 0;
-    if (user_unlock_f == 0) {
-        FC_Unlock();
-        user_unlock_f = 1;
-    } else if (user_unlock_f == 1 && user_takeoff_f == 0) {
-        if (process_delay(1000) == delay_finish) {
-            OneKey_Takeoff(0); //参数单位：厘米； 0：默认上位机设置的高度。
-            user_takeoff_f = 1;
-        }
-    } else if (user_takeoff_f == 1) {
-        if (process_delay(1000) == delay_finish) {
-            user_takeoff_f = 0;
-            user_unlock_f = 0;
-            return Mission_finish;
-        }
-    }
-    return Mission_Unfinished;
-}
-
-void process_control() {
-    static uint16_t mission_flag = 0, mission_step = 0;
-    static uint16_t ready = 0;
-    static uint8_t mission_finish, block_f = 0;
-    static uint16_t omv_lose, last_offset = 0;
-    static float pid_angle, pid_vy;
-    static uint16_t move_angle = 0;
-
-    if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
-        //进入程控模式
-        mission_flag = 1;
-        mission_step = 1;
-    } else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 1500) {
-        mission_flag = 0;
-        mission_step = 0;
-        now_delay = 0;
-        ready = 1;
-    }
-    if (mission_step != 0 && mission_flag == 1) {
-        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
-    } else {
-        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
-        light_check(LX_LED, NONE);
-        light_check(USER_LED, NONE);
-    }//BEEP SWITCH
-    if (mission_flag == 1) {
-        if (mission_step == 1) {
-            if (user_takeoff() == Mission_finish) {
-                mission_step++;
-            }
-        } //程控起飞
-        else if (mission_step == 2) {
-            if (omv.online == 1) {
-                if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
-                    omv.raw_data.data_flushed = 0;
-                    if (omv.raw_data.type == OMV_DATA_LINE || omv.raw_data.type == OMV_DATA_BOTH) {
-                        if (ABS(omv.raw_data.line.angle>5||omv.line_track_data.offset_decoupled_lpf>5)) {
-                            pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, 0);
-                            pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
-                                                           omv.line_track_data.offset_decoupled_lpf, 0);
-                            move_angle = (int) (ABS(omv.raw_data.line.angle) + atan2(ABS(pid_vy), 5) / 3.14 * 180);
-                            if (pid_angle > 0) {
-                                Left_Rotate(5, ABS(pid_angle));
-                                Horizontal_Move(40, 20, 360 - move_angle);
-                                light_check(USER_LED, RGB_B);
-                            }
-                            if (pid_angle < 0) {
-                                Right_Rotate(5, ABS(pid_angle));
-                                Horizontal_Move(40, 20, move_angle);
-                                light_check(USER_LED, RGB_G);
-                            }
-                        } else {
-                            Horizontal_Move(30, 20, 0);
-                            Left_Rotate(0, 0);
-                            light_check(USER_LED, RGB_R);
-                        }
-                        if (omv.raw_data.type == OMV_DATA_BOTH) {
-                            light_check(LX_LED, RGB_B);
-                            if (process_delay(2000) == delay_finish) {
-                                mission_step++;
-                            } else
-                                light_check(LX_LED, RGB_G);
-                        }
-                    } else if (omv.raw_data.type == OMV_DATA_BLOCK) {
-                        light_check(LX_LED, RGB_B);
-                        if (process_delay(2000) == delay_finish) {
-                            mission_step ++;
-                        } else {
-                            Horizontal_Move(30, 20, 0);
-                            Left_Rotate(0, 0);
-                            light_check(USER_LED, RGB_R);
-                        }
-                    }
-                }
-                if (omv.raw_data.find == 0) {
-                    Horizontal_Move(30, 20, 0);
-                    Left_Rotate(0, 0);
-                    light_check(USER_LED, RGB_R);
-                }
-            }
-            if (omv_find_detection() == Mission_over) {
-                mission_step = Mission_over;
-            }
-            process_delay(2000);
-        } else if (mission_step == 3) {
-            OneKey_Hover();
-            light_check(LX_LED, NONE);
-        } else if (mission_step == Mission_over) {
-            OneKey_Land();
-            mission_step = 0;
-            ready = 0;
-            omv_lose = 0;
-        }
-    }
-}
-
 void fly_s() {
     static uint16_t fly_s_delay = 0;
     if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] == 2000) {
@@ -307,47 +375,16 @@ void fly_s() {
     }
 }
 
-inline void onekey_lock(void)
-{
-    static uint8_t reseted = 0;
-
-    if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000) {
-        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
-            FC_Lock();
-        }
-
-        if (!reseted) {
-            reseted = 1;
-        }
-
-        fc_sta.esc_output_unlocked = 0;
-    } else if (!fc_sta.esc_output_unlocked && reseted) {
-        fc_sta.esc_output_unlocked = 1;
-    } else if(!reseted) {
-        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
-            FC_Lock();
-        }
-
-        fc_sta.esc_output_unlocked = 0;
+uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360) {
+    static uint16_t fly_f = 0;
+    if (fly_f == 0) {
+        fly_f = 1;
+        Horizontal_Move(distance_cm, velocity, dir_angle_0_360);
+        process_delay(distance_cm / velocity * 1000);
+    } else if (process_delay(distance_cm / velocity * 1000) == delay_finish) {
+        fly_f = 0;
+        return Mission_finish;
     }
+    return Mission_Unfinished;
 }
 
-////测试高度设定函数
-//void TestHeightSet(uint16_t Hz)
-//{
-//    static uint16_t ActionNumbers=0;
-//
-//    if(ano_mod==3)
-//    {
-//        if(ActionNumbers==0)
-//        {
-//            if( HeightSet(100)==1)
-//            {
-//                ActionNumbers++;
-//            }
-//        }
-//        else if(ActionNumbers==1)
-//        {
-//        }
-//    }
-//}

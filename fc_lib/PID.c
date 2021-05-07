@@ -9,7 +9,8 @@
 PID_PositionalTypeDef PID_PositionalLine_vy ={
         .Ki_Limit=0,
         .Ki_Separation=0,
-        .Kp=0.5,
+        .Kp=8,
+        //TODO
         .Ki=0,
         .Kd=0,
 };

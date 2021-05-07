@@ -8,10 +8,9 @@
 #include "fc_config.h"
 
 #define process_dt_ms   20
+#define Mission_err 2
 #define Mission_finish  1
 #define Mission_Unfinished  0
-#define delay_finish    1
-#define delay_Unfinished    0
 #define LX_LED  0
 #define USER_LED    1
 #define NONE    0
@@ -20,6 +19,13 @@
 #define RGB_B   3
 #define ALL 4
 #define Mission_over 99
+
+typedef struct {
+    uint8_t delay_star;
+    uint32_t now_delay;
+    uint32_t ami_delay;
+    uint8_t delay_finished;
+} Process_Delay;
 
 extern void onekey_lock(void);
 
@@ -33,11 +39,13 @@ void process_control();
 
 uint8_t user_takeoff();
 
-uint8_t process_delay(uint16_t delay_ms);
+void process_delay();
 
 void fly_s();
 
 uint8_t omv_find_detection();
+
+uint8_t omv_find_lines();
 
 void TestHeightSet(uint16_t Hz);   //测试HeightSet()函数的功能
 

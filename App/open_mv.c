@@ -67,14 +67,11 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
             case 0x01: {
                 omv.raw_data.type = OMV_DATA_LINE;
                 omv.raw_data.find = data[3];
-
-
                 if (omv.raw_data.find) {
                     num_line = data[4];
                 } else {
                     num_line = 0;
                 }
-
                 for (int i = 0; i < num_line; ++i) {
                     _tmp_line[i].start_x = ((((int16_t) data[5 + 6 * i + 0]) << 8u) | data[5 + 6 * i + 1])-160;
                     _tmp_line[i].start_y = ((((int16_t) data[5 + 6 * i + 2]) << 8u) | data[5 + 6 * i + 3])-120;
@@ -87,9 +84,6 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                         } else {
                             omv.raw_data.line.angle = _tmp_line[i].angle;
                         }
-//                if(opmv.lt.angle > -5 && opmv.lt.angle < 5){
-//                    opmv.lt.angle = 0;
-//                }
                         omv.raw_data.line.offset = (_tmp_line[i].start_x +
                                                     _tmp_line[i].start_y * tan(_tmp_line[i].angle / 180.0 * 3.14159));
                     }
@@ -156,14 +150,10 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
                         } else {
                             omv.raw_data.line.angle = _tmp_line[i].angle;
                         }
-//                if(opmv.lt.angle > -5 && opmv.lt.angle < 5){
-//                    opmv.lt.angle = 0;
-//                }
                         omv.raw_data.line.offset = (_tmp_line[i].start_x +
                                                     _tmp_line[i].start_y * tan(_tmp_line[i].angle / 180.0 * 3.14159));
                     }
                 }
-
                 break;
             }
         }
