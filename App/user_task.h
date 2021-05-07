@@ -39,4 +39,6 @@ void fly_s();
 
 uint8_t omv_find_detection();
 
+void TestHeightSet(uint16_t Hz);   //测试HeightSet()函数的功能
+
 #endif //USER_TASK_H

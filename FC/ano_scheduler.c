@@ -9,12 +9,16 @@
 #include "ano_lx_dt.h"
 #include "drv_led.h"
 #include "drv_buzzer.h"
+#include "ano_lx_function.h"
+#include "stdio.h"
+#include "drv_ano_of.h"
 
 
 static void Loop_1000Hz(void) //1ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-//    user_rgb_drv();
+    user_rgb_drv();
+    buzzer_drv(1);
     //////////////////////////////////////////////////////////////////////
 }
 
@@ -35,14 +39,14 @@ static void Loop_200Hz(void) //5ms执行一次
 static void Loop_100Hz(void) //10ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-//    user_rgb_update(10);
+    user_rgb_update(10);
     //////////////////////////////////////////////////////////////////////
 }
 
 static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
-//    user_rgb_tasks(20);
+    user_rgb_tasks(20);
     process_control();
     omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
     omv_offline_check(20);
@@ -56,6 +60,11 @@ static void Loop_20Hz(void) //50ms执行一次
     //////////////////////////////////////////////////////////////////////
 }
 
+static void Loop_10Hz(void) //100ms执行一次
+{
+//    TestHeightSet(10);
+}
+
 static void Loop_5Hz(void) //200ms执行一次
 {
 
@@ -64,6 +73,7 @@ static void Loop_5Hz(void) //200ms执行一次
 static void Loop_2Hz(void) //500ms执行一次
 {
 //    test_api(500);
+//    printf("H=%d\r\n",ano_of.of_alt_cm);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -78,6 +88,7 @@ static sched_task_t sched_tasks[] =
                 {Loop_100Hz, 100, 0, 0},
                 {Loop_50Hz, 50, 0, 0},
                 {Loop_20Hz, 20, 0, 0},
+                {Loop_10Hz, 10, 0, 0},
                 {Loop_5Hz, 5, 0, 0},
                 {Loop_2Hz, 2, 0, 0},
         };

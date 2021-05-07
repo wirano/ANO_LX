@@ -23,6 +23,8 @@ uint8_t All_Init()
     HAL_Delay(100);
     //串口2初始化，函数参数为波特率
     DrvUart2Init();
+    //串口4初始化，接蓝牙。
+    DrvUart4Init();
     //串口3初始化
     DrvUart3Init();
     //接匿名光流

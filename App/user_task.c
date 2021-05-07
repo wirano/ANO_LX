@@ -10,12 +10,14 @@
 #include "ano_lx.h"
 #include "ano_lx_function.h"
 #include "ano_lx_state.h"
+#include "drv_buzzer.h"
 #include "ano_math.h"
 #include "PID.h"
 #include <math.h>
+#include <stdio.h>
 
 extern _rt_tar_un rt_tar;
-extern uint16_t ano_mode;
+extern uint16_t ano_mod;
 uint16_t now_delay = 0;
 
 uint8_t omv_find_detection() {
@@ -111,6 +113,7 @@ void one_key_takeoff_land() {
     }
     ////////////////////////////////////////////////////////////////////////
 }
+
 
 void light_check(uint8_t group, uint8_t color) {
     if (group == LX_LED) {
@@ -308,7 +311,7 @@ inline void onekey_lock(void)
 {
     static uint8_t reseted = 0;
 
-    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] < 2000) {
+    if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000) {
         if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
             FC_Lock();
         }
@@ -320,12 +323,31 @@ inline void onekey_lock(void)
         fc_sta.esc_output_unlocked = 0;
     } else if (!fc_sta.esc_output_unlocked && reseted) {
         fc_sta.esc_output_unlocked = 1;
+    } else if(!reseted) {
+        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+            FC_Lock();
+        }
+
+        fc_sta.esc_output_unlocked = 0;
     }
-//    } else {
-//        if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
-//            FC_Lock();
-//        }
-//
-//        fc_sta.esc_output_unlocked = 0;
-//    }
 }
+
+////测试高度设定函数
+//void TestHeightSet(uint16_t Hz)
+//{
+//    static uint16_t ActionNumbers=0;
+//
+//    if(ano_mod==3)
+//    {
+//        if(ActionNumbers==0)
+//        {
+//            if( HeightSet(100)==1)
+//            {
+//                ActionNumbers++;
+//            }
+//        }
+//        else if(ActionNumbers==1)
+//        {
+//        }
+//    }
+//}
