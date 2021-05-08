@@ -13,6 +13,7 @@
 #include <math.h>
 #include "drv_led.h"
 #include <stdio.h>
+#include "drv_buzzer.h"
 
 extern _rt_tar_un rt_tar;
 extern uint16_t ano_mod;
@@ -39,7 +40,7 @@ Process_Delay Block_delay = {
 };
 
 void process_delay() {
-    if (Takeoff_delay.ami_delay == 1) {
+    if (Takeoff_delay.delay_star == 1) {
         Takeoff_delay.now_delay += process_dt_ms;
         if (Takeoff_delay.now_delay >= Takeoff_delay.ami_delay) {
             Takeoff_delay.delay_finished = 1;
@@ -91,10 +92,12 @@ void process_control() {
     }
 
     if (mission_flag == 1) {
-        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
+//        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
+        buzzer.freq = 5;
         omv_led_state.led_num = 4;
     } else {
-        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
+//        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
+        buzzer.freq = 200;
         omv_led_state.led_num = 0;
     }//BEEP SWITCH
 
@@ -118,6 +121,7 @@ void process_control() {
             Block_delay.delay_star = 0;
         }
     }
+//    printf("mission_step:%d\r\n",mission_step);
 }
 
 uint8_t omv_find_detection() {
@@ -170,6 +174,7 @@ uint8_t omv_find_lines() {
                 }
                 printf("line offset:%d angle:%d\r\n", (int) omv.raw_data.line.offset, omv.raw_data.line.angle);
                 printf("de line offset:%.2f\r\n", omv.line_track_data.offset_decoupled_lpf);
+                printf("pid_vy:%.2f pid_angle:%.2f\r\n",pid_vy,pid_angle);
             } else if (omv.raw_data.type == OMV_DATA_BLOCK) {
                 Block_delay.delay_star = 1;
                 Block_delay.ami_delay = 3000;
