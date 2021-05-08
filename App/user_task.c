@@ -3,14 +3,11 @@
 //
 
 #include "user_task.h"
-//#include "drv_rc_in.h"
 #include "ano_lx_function.h"
 #include "main.h"
 #include "open_mv.h"
 #include "ano_lx.h"
-#include "ano_lx_function.h"
 #include "ano_lx_state.h"
-#include "drv_buzzer.h"
 #include "ano_math.h"
 #include "PID.h"
 #include <math.h>
@@ -41,46 +38,44 @@ Process_Delay Block_delay = {
         .delay_finished=0,
 };
 
-
 void process_delay() {
-    if (Takeoff_delay.delay_star == 1) {
+    if (Takeoff_delay.ami_delay == 1) {
         Takeoff_delay.now_delay += process_dt_ms;
         if (Takeoff_delay.now_delay >= Takeoff_delay.ami_delay) {
             Takeoff_delay.delay_finished = 1;
-            Takeoff_delay.delay_star = 0;
         }
     } else {
         Takeoff_delay.now_delay = 0;
         Takeoff_delay.ami_delay = 0;
+        Takeoff_delay.delay_finished = 0;
     }
     if (Unlock_delay.delay_star == 1) {
         Unlock_delay.now_delay += process_dt_ms;
         if (Unlock_delay.now_delay >= Unlock_delay.ami_delay) {
             Unlock_delay.delay_finished = 1;
-            Unlock_delay.delay_star = 0;
-        } else {
-            Unlock_delay.now_delay = 0;
-            Unlock_delay.ami_delay = 0;
         }
+    } else {
+        Unlock_delay.now_delay = 0;
+        Unlock_delay.ami_delay = 0;
+        Unlock_delay.delay_finished = 0;
     }
     if (Block_delay.delay_star == 1) {
         Block_delay.now_delay += process_dt_ms;
         if (Block_delay.now_delay >= Block_delay.ami_delay) {
             Block_delay.delay_finished = 1;
-            Block_delay.delay_star = 0;
-        } else {
-            Block_delay.now_delay = 0;
-            Block_delay.ami_delay = 0;
         }
+    } else {
+        Block_delay.now_delay = 0;
+        Block_delay.ami_delay = 0;
+        Block_delay.delay_finished = 0;
     }
-
 }
+
 
 void process_control() {
     static uint16_t mission_flag = 0, mission_step = 0;
     static uint16_t ready = 0;
     static uint8_t mission_finish, block_f = 0;
-    static uint16_t omv_lose, last_offset = 0;
 
     if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
         //进入程控模式
@@ -93,10 +88,9 @@ void process_control() {
         Takeoff_delay.delay_star = 0;
         Unlock_delay.delay_star = 0;
         Block_delay.delay_star = 0;
-
     }
 
-    if (mission_step != 0 && mission_flag == 1) {
+    if (mission_flag == 1) {
         HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
         omv_led_state.led_num = 4;
     } else {
@@ -111,15 +105,17 @@ void process_control() {
             }
         } //程控起飞
         else if (mission_step == 2) {
+            omv_find_lines();
         } else if (mission_step == 3) {
-            omv_led_state.led4_omv_move = 2;
             OneKey_Land();
-//            light_check(LX_LED, NONE);
+//            mission_step==Mission_over;
         } else if (mission_step == Mission_over) {
             OneKey_Land();
-            mission_step = 0;
             ready = 0;
-            omv_lose = 0;
+            mission_flag = 0;
+            Takeoff_delay.delay_star = 0;
+            Unlock_delay.delay_star = 0;
+            Block_delay.delay_star = 0;
         }
     }
 }
@@ -141,18 +137,18 @@ uint8_t omv_find_detection() {
     return 0;
 }
 
-uint8_t omv_find_lines(){
+uint8_t omv_find_lines() {
     static float pid_angle, pid_vy;
     static uint16_t move_angle = 0;
-    if (omv.online == 1) {
-        if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
+    if (omv.online == 1 && omv.raw_data.data_flushed == 1) {
+        if (omv.raw_data.find == 1) {
             omv_decoupling(20, fc_sta.fc_attitude.rol, fc_sta.fc_attitude.pit);
             omv.raw_data.data_flushed = 0;
             if (omv.raw_data.type == OMV_DATA_LINE || omv.raw_data.type == OMV_DATA_BOTH) {
-                if (ABS(omv.raw_data.line.angle > 5 || omv.line_track_data.offset_decoupled_lpf > 5)) {
-                    pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, 0);
-                    pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
-                                                   omv.line_track_data.offset_decoupled_lpf, 0);
+                pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, 0);
+                pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
+                                               omv.line_track_data.offset_decoupled_lpf, 0);
+                if ((ABS(omv.raw_data.line.angle) > 5) || (ABS(omv.line_track_data.offset_decoupled_lpf) > 5)) {
                     move_angle = (int) (ABS(omv.raw_data.line.angle) + atan2(ABS(pid_vy), 3) / 3.14 * 180);
                     if (pid_angle > 0) {
                         Left_Rotate(5, ABS(pid_angle));
@@ -161,40 +157,36 @@ uint8_t omv_find_lines(){
                     if (pid_angle < 0) {
                         Right_Rotate(5, ABS(pid_angle));
                         Horizontal_Move(40, 20, move_angle);
-                        //TODO:
                     }
                 } else {
-                    Horizontal_Move(30, 20, 0);
+                    Horizontal_Move(30, 20, (int) pid_angle);
                     Left_Rotate(0, 0);
                 }
                 if (omv.raw_data.type == OMV_DATA_BOTH) {
-                    omv_led_state.led3_omv_target = 0;
-                    if (process_delay(10000) == delay_finish) {
-                        mission_step++;
-                    }
-                }
-                if (omv.raw_data.type == OMV_DATA_LINE) {
-                    omv_led_state.led3_omv_target = 1;
+                    Block_delay.delay_star = 1;
+                    Block_delay.ami_delay = 3000;
+                    if (Block_delay.delay_finished == 1)
+                        return Mission_finish;
                 }
                 printf("line offset:%d angle:%d\r\n", (int) omv.raw_data.line.offset, omv.raw_data.line.angle);
                 printf("de line offset:%.2f\r\n", omv.line_track_data.offset_decoupled_lpf);
             } else if (omv.raw_data.type == OMV_DATA_BLOCK) {
-                omv_led_state.led3_omv_target = 2;
-                if (process_delay(10000) == delay_finish) {
-                    mission_step++;
+                Block_delay.delay_star = 1;
+                Block_delay.ami_delay = 3000;
+                if (Block_delay.delay_finished == 1) {
+                    Block_delay.delay_star = 0;
+                    return Mission_finish;
                 } else {
                     Horizontal_Move(30, 20, 0);
                     Left_Rotate(0, 0);
-//                            light_check(USER_LED, RGB_R);
                 }
 //                        printf("block x:%d y:%d\r\n",(int)omv.raw_data.block.center_x,(int)omv.raw_data.block.center_y);
 //                        printf("de block x:%.2f y:%.2f\r\n",omv.block_track_data.offset_x_decoupled_lpf,omv.block_track_data.offset_y_decoupled_lpf);
             }
         }
-        if (omv.raw_data.find == 0) {
+        else if (omv.raw_data.find == 0) {
             Horizontal_Move(30, 20, 0);
             Left_Rotate(0, 0);
-//                    light_check(USER_LED, NONE);
         }
     }
     if (omv_find_detection() == Mission_over) {
@@ -205,19 +197,17 @@ uint8_t omv_find_lines(){
 
 uint8_t user_takeoff() {
     static uint16_t user_takeoff_f = 0, user_unlock_f = 0;
-    if (Unlock_delay.delay_star == 0 && Unlock_delay.delay_finished == 0) {
+    if (Unlock_delay.delay_star == 0) {
         FC_Unlock();
         Unlock_delay.delay_star = 1;
         Unlock_delay.ami_delay = 1000;
-    } else if (Unlock_delay.delay_finished == 1 && Takeoff_delay.delay_star == 0 && Takeoff_delay.delay_finished == 0) {
+    } else if (Unlock_delay.delay_finished == 1 && Takeoff_delay.delay_star == 0) {
         OneKey_Takeoff(0); //参数单位：厘米； 0：默认上位机设置的高度。
         Takeoff_delay.delay_star = 1;
         Takeoff_delay.ami_delay = 2000;
     } else if (Takeoff_delay.delay_finished == 1) {
         Unlock_delay.delay_star = 0;
         Takeoff_delay.delay_star = 0;
-        Unlock_delay.delay_finished = 0;
-        Takeoff_delay.delay_finished = 0;
         return Mission_finish;
     }
     return Mission_Unfinished;
@@ -376,15 +366,15 @@ void fly_s() {
 }
 
 uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360) {
-    static uint16_t fly_f = 0;
-    if (fly_f == 0) {
-        fly_f = 1;
-        Horizontal_Move(distance_cm, velocity, dir_angle_0_360);
-        process_delay(distance_cm / velocity * 1000);
-    } else if (process_delay(distance_cm / velocity * 1000) == delay_finish) {
-        fly_f = 0;
-        return Mission_finish;
-    }
+//    static uint16_t fly_f = 0;
+//    if (fly_f == 0) {
+//        fly_f = 1;
+//        Horizontal_Move(distance_cm, velocity, dir_angle_0_360);
+//        process_delay(distance_cm / velocity * 1000);
+//    } else if (process_delay(distance_cm / velocity * 1000) == delay_finish) {
+//        fly_f = 0;
+//        return Mission_finish;
+//    }
     return Mission_Unfinished;
 }
 
