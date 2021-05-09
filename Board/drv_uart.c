@@ -210,14 +210,14 @@ void DrvUart3SendBuf(unsigned char *DataToSend, uint8_t data_num)
     }
 }
 
-uint8_t U3RxDataTmp[100];
+uint8_t U3RxDataTmp[200];
 uint8_t U3RxInCnt = 0;
 uint8_t U3RxoutCnt = 0;
 
 void drvU3GetByte(uint8_t data)
 {
     U3RxDataTmp[U3RxInCnt++] = data;
-    if (U3RxInCnt >= 100)
+    if (U3RxInCnt >= 200)
         U3RxInCnt = 0;
 }
 
@@ -225,7 +225,7 @@ void drvU3DataCheck(void)
 {
     while (U3RxInCnt != U3RxoutCnt) {
         U3GetOneByte(U3RxDataTmp[U3RxoutCnt++]);
-        if (U3RxoutCnt >= 100)
+        if (U3RxoutCnt >= 200)
             U3RxoutCnt = 0;
     }
 }
