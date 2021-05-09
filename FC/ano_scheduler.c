@@ -50,7 +50,9 @@ static void Loop_50Hz(void) //20ms执行一次
     process_control();
     omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
     omv_offline_check(20);
-    process_delay();
+    process_delay(&Takeoff_delay);
+    process_delay(&Unlock_delay);
+    process_delay(&Block_delay);
     //////////////////////////////////////////////////////////////////////
 }
 

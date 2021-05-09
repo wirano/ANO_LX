@@ -38,36 +38,16 @@ Process_Delay Block_delay = {
         .delay_finished=0,
 };
 
-void process_delay() {
-    if (Takeoff_delay.ami_delay == 1) {
-        Takeoff_delay.now_delay += process_dt_ms;
-        if (Takeoff_delay.now_delay >= Takeoff_delay.ami_delay) {
-            Takeoff_delay.delay_finished = 1;
+void process_delay(Process_Delay *user_delay) {
+    if (user_delay->delay_star == 1) {
+        user_delay->now_delay += process_dt_ms;
+        if (user_delay->now_delay >= user_delay->ami_delay) {
+            user_delay->delay_finished = 1;
         }
     } else {
-        Takeoff_delay.now_delay = 0;
-        Takeoff_delay.ami_delay = 0;
-        Takeoff_delay.delay_finished = 0;
-    }
-    if (Unlock_delay.delay_star == 1) {
-        Unlock_delay.now_delay += process_dt_ms;
-        if (Unlock_delay.now_delay >= Unlock_delay.ami_delay) {
-            Unlock_delay.delay_finished = 1;
-        }
-    } else {
-        Unlock_delay.now_delay = 0;
-        Unlock_delay.ami_delay = 0;
-        Unlock_delay.delay_finished = 0;
-    }
-    if (Block_delay.delay_star == 1) {
-        Block_delay.now_delay += process_dt_ms;
-        if (Block_delay.now_delay >= Block_delay.ami_delay) {
-            Block_delay.delay_finished = 1;
-        }
-    } else {
-        Block_delay.now_delay = 0;
-        Block_delay.ami_delay = 0;
-        Block_delay.delay_finished = 0;
+        user_delay->now_delay = 0;
+        user_delay->ami_delay = 0;
+        user_delay->delay_finished = 0;
     }
 }
 

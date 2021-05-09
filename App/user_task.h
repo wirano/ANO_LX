@@ -28,6 +28,9 @@ typedef struct {
 } Process_Delay;
 
 extern void onekey_lock(void);
+extern Process_Delay Takeoff_delay;
+extern Process_Delay Unlock_delay;
+extern Process_Delay Block_delay;
 
 void one_key_takeoff_land();
 
@@ -39,7 +42,7 @@ void process_control();
 
 uint8_t user_takeoff();
 
-void process_delay();
+void process_delay(Process_Delay *user_delay);
 
 void fly_s();
 
