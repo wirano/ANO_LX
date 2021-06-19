@@ -52,4 +52,6 @@ uint8_t omv_find_lines();
 
 void TestHeightSet(uint16_t Hz);   //测试HeightSet()函数的功能
 
+uint8_t omv_find_blobs();
+
 #endif //USER_TASK_H
