@@ -63,7 +63,6 @@ void process_delay(Process_Delay *user_delay) {
 void process_control() {
     static uint16_t mission_flag = 0, mission_step = 0;
     static uint16_t ready = 0;
-    static uint8_t mission_finish, block_f = 0;
     static uint8_t Mission_state = Mission_Unfinished;
     if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
         //进入程控模式
@@ -249,7 +248,6 @@ uint8_t omv_find_lines() {
 }
 
 uint8_t user_takeoff() {
-    static uint16_t user_takeoff_f = 0, user_unlock_f = 0;
     if (Unlock_delay.delay_star == 0) {
         FC_Unlock();
         Unlock_delay.delay_star = 1;
