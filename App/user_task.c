@@ -61,9 +61,12 @@ void process_delay(Process_Delay *user_delay) {
 
 
 void process_control() {
-    static uint16_t mission_flag = 0, mission_step = 0;
+    static uint16_t mission_flag = 0, mission_step = 0,last_mission_step;
     static uint16_t ready = 0;
     static uint8_t Mission_state = Mission_Unfinished;
+    if(last_mission_step!=mission_step)
+        printf("mission_step:%d\r\n",mission_step);
+    last_mission_step=mission_step;
     if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
         //进入程控模式
         mission_flag = 1;
@@ -98,6 +101,7 @@ void process_control() {
                     mission_step++;
                     break;
                 case Mission_err:
+                    printf("err!!!!!!!!\r\n");
                     mission_step = Mission_over;
                     break;
                 case Mission_Unfinished:
@@ -127,11 +131,13 @@ uint8_t omv_find_detection() {
     static uint16_t omv_lose;
     if (omv.online == 1 && omv.raw_data.find == 0) {
         omv_lose++;
+        printf("no_find!!!!!!!!\r\n");
     }
     if (omv.online == 1 && omv.raw_data.find == 1) {
         omv_lose = 0;
     }
     if (omv.online == 0) {
+        printf("unline!!!!!!!!\r\n");
         omv_lose++;
     }
     if (omv_lose > (1000 / process_dt_ms)) {
@@ -174,6 +180,7 @@ uint8_t omv_find_blobs() {
             last_y = (int) omv.block_track_data.offset_y_decoupled_lpf;
         } else if (omv.raw_data.find == 0) {
             Unfind_time++;
+            printf("unfind\r\n");
             if (Unfind_time == 50)
                 OneKey_Hover();
             if (Unfind_time >= 200)
