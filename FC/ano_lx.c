@@ -89,9 +89,10 @@ static inline void RC_Data_Task(float dT_s)
                     //执行返航
                     tmp = OneKey_Return_Home();
                 }
-                else
+                else   //如果2s内程控未切3次，让统计变量复位
                 {
-                    //null
+                    mod_f_time_cnt = 0;
+                    mod_f[2] = 0;
                 }
                 //reset
                 if (tmp)
