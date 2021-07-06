@@ -124,7 +124,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   All_Init();
   Scheduler_Setup();
-
+  HAL_GPIO_WritePin(key3_GPIO_Port,key3_Pin,GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Infinite loop */

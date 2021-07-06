@@ -47,7 +47,6 @@ static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
     user_rgb_tasks(20);
-    process_control();
     omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
     omv_offline_check(20);
     process_delay(&Takeoff_delay);
@@ -67,6 +66,8 @@ static void Loop_20Hz(void) //50ms执行一次
 static void Loop_10Hz(void) //100ms执行一次
 {
 //    TestHeightSet(10);
+    process_control();
+
 }
 
 static void Loop_5Hz(void) //200ms执行一次

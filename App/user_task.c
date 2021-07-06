@@ -61,12 +61,12 @@ void process_delay(Process_Delay *user_delay) {
 
 
 void process_control() {
-    static uint16_t mission_flag = 0, mission_step = 0,last_mission_step;
+    static uint16_t mission_flag = 0, mission_step = 0, last_mission_step;
     static uint16_t ready = 0;
     static uint8_t Mission_state = Mission_Unfinished;
-    if(last_mission_step!=mission_step)
-        printf("mission_step:%d\r\n",mission_step);
-    last_mission_step=mission_step;
+    if (last_mission_step != mission_step)
+        printf("mission_step:%d\r\n", mission_step);
+    last_mission_step = mission_step;
     if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
         //进入程控模式
         mission_flag = 1;
@@ -94,6 +94,10 @@ void process_control() {
                 mission_step++;
             }
         } //程控起飞
+//        else if (mission_step == 2) {
+//            Horizontal_Move(200, 15, 290);
+//            mission_step=6;
+//        } //
         else if (mission_step == 2) {
             Mission_state = omv_find_blobs();
             switch (Mission_state) {
@@ -108,13 +112,13 @@ void process_control() {
                     break;
             }
         } else if (mission_step == 3) {
-            if (Land_delay.delay_star==0) {
-                Horizontal_Move(40, 20, 0);
-                Land_delay.delay_star=1;
-                Land_delay.ami_delay=2000;
+            if (Land_delay.delay_star == 0) {
+                Horizontal_Move(40, 15, 0);
+                Land_delay.delay_star = 1;
+                Land_delay.ami_delay = 1500;
             }
-            if (Land_delay.delay_finished==1)
-                mission_step=Mission_over;
+            if (Land_delay.delay_finished == 1)
+                mission_step = Mission_over;
         } else if (mission_step == Mission_over) {
             OneKey_Land();
             ready = 0;
@@ -122,7 +126,7 @@ void process_control() {
             Takeoff_delay.delay_star = 0;
             Unlock_delay.delay_star = 0;
             Block_delay.delay_star = 0;
-            Land_delay.delay_star=0;
+            Land_delay.delay_star = 0;
         }
     }
 }
@@ -131,13 +135,11 @@ uint8_t omv_find_detection() {
     static uint16_t omv_lose;
     if (omv.online == 1 && omv.raw_data.find == 0) {
         omv_lose++;
-        printf("no_find!!!!!!!!\r\n");
     }
     if (omv.online == 1 && omv.raw_data.find == 1) {
         omv_lose = 0;
     }
     if (omv.online == 0) {
-        printf("unline!!!!!!!!\r\n");
         omv_lose++;
     }
     if (omv_lose > (1000 / process_dt_ms)) {
@@ -147,43 +149,51 @@ uint8_t omv_find_detection() {
 }
 
 uint8_t omv_find_blobs() {
-    static uint8_t Unfind_time = 0;
+    static uint8_t Unfind_time = 0, distance, speed;
     static uint32_t move_angle = 0, last_x = 0, last_y = 0;
-    if (Block_delay.delay_star != 1) {
-        Block_delay.delay_star = 1;
-        Block_delay.ami_delay = 5000;
-    }
     if (omv.online == 1 && omv.raw_data.data_flushed == 1) {
         if (omv.raw_data.find == 1) {
+            if (Block_delay.delay_star != 1) {
+                Block_delay.delay_star = 1;
+                Block_delay.ami_delay = 5000;
+            }
             omv_decoupling(20, fc_sta.fc_attitude.rol, fc_sta.fc_attitude.pit);
             omv.raw_data.data_flushed = 0;
-            move_angle = (int) my_atan(omv.block_track_data.offset_y_decoupled_lpf,
-                                       omv.block_track_data.offset_x_decoupled_lpf);
+            move_angle = (int) (my_atan(omv.block_track_data.offset_y_decoupled_lpf,
+                                        omv.block_track_data.offset_x_decoupled_lpf) / 3.14 * 180);
+            distance = (int) sqrt(
+                    omv.block_track_data.offset_y_decoupled_lpf * omv.block_track_data.offset_y_decoupled_lpf +
+                    omv.block_track_data.offset_x_decoupled_lpf * omv.block_track_data.offset_x_decoupled_lpf);
             if ((ABS(last_x - omv.block_track_data.offset_x_decoupled_lpf) < 10) &&
-                ABS((last_y - omv.block_track_data.offset_y_decoupled_lpf) < 10)) {
+                ABS((last_y - omv.block_track_data.offset_y_decoupled_lpf) < 10) && distance < 25) {
                 if (Block_delay.delay_finished == 1)
                     return Mission_finish;
             } else {
                 Block_delay.now_delay = 0;
             }
-            if (move_angle > 0) {
-                Horizontal_Move(40, 15, move_angle);
-            } else if (move_angle < 0) {
-                Horizontal_Move(40, 15, 360 - move_angle);
+            printf("Block_delay.now_delay %d\r\n",Block_delay.now_delay);
+            if (distance > 10) {
+                speed = 0.2 * distance;
+                if (speed > 8)
+                    speed = 8;
+                if (move_angle >= 0) {
+                    Horizontal_Move(0.1 * distance, speed, 360 - move_angle);
+                } else if (move_angle < 0) {
+                    Horizontal_Move(0.1 * distance, speed, -move_angle);
+                }
             }
             Unfind_time = 0;
-            printf("block x:%d y:%d\r\n", (int) omv.raw_data.block.center_x, (int) omv.raw_data.block.center_y);
             printf("de block x:%.2f y:%.2f\r\n", omv.block_track_data.offset_x_decoupled_lpf,
                    omv.block_track_data.offset_y_decoupled_lpf);
-            printf("angle :%d \r\n", (int) move_angle);
+            printf("angle :%d distance :%d \r\n", (int) move_angle, distance);
             last_x = (int) omv.block_track_data.offset_x_decoupled_lpf;
             last_y = (int) omv.block_track_data.offset_y_decoupled_lpf;
         } else if (omv.raw_data.find == 0) {
             Unfind_time++;
             printf("unfind\r\n");
-            if (Unfind_time == 50)
-                OneKey_Hover();
-            if (Unfind_time >= 200)
+//            if (Unfind_time == 20)
+//                OneKey_Hover();
+            if (Unfind_time >= 80)
                 return Mission_err;
             else
                 return Mission_Unfinished;
@@ -258,11 +268,11 @@ uint8_t user_takeoff() {
     if (Unlock_delay.delay_star == 0) {
         FC_Unlock();
         Unlock_delay.delay_star = 1;
-        Unlock_delay.ami_delay = 1000;
+        Unlock_delay.ami_delay = 3000;
     } else if (Unlock_delay.delay_finished == 1 && Takeoff_delay.delay_star == 0) {
         OneKey_Takeoff(0); //参数单位：厘米； 0：默认上位机设置的高度。
         Takeoff_delay.delay_star = 1;
-        Takeoff_delay.ami_delay = 2000;
+        Takeoff_delay.ami_delay = 3000;
     } else if (Takeoff_delay.delay_finished == 1) {
         Unlock_delay.delay_star = 0;
         Takeoff_delay.delay_star = 0;
