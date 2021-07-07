@@ -159,19 +159,6 @@ uint8_t process_delay(uint16_t delay_ms) {
     }
 }
 
-uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360) {
-    static uint16_t fly_f = 0;
-    if (fly_f == 0) {
-        fly_f = 1;
-        Horizontal_Move(distance_cm, velocity, dir_angle_0_360);
-        process_delay(distance_cm / velocity * 1000);
-    } else if (process_delay(distance_cm / velocity * 1000) == delay_finish) {
-        fly_f = 0;
-        return Mission_finish;
-    }
-    return Mission_Unfinished;
-}
-
 uint8_t user_takeoff() {
     static uint16_t user_takeoff_f = 0, user_unlock_f = 0;
     if (user_unlock_f == 0) {
@@ -267,24 +254,6 @@ void process_control() {
     }
 }
 
-void fly_s() {
-    static uint16_t fly_s_delay = 0;
-    if (rc_in.rc_ch.st_data.ch_[ch_7_aux3] == 2000) {
-        if (fly_s_delay == 0) {
-            rt_tar.st_data.vel_x = 50;
-            HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
-        } else if (fly_s_delay == 2000) {
-            HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
-            rt_tar.st_data.vel_x = -50;
-        } else if (fly_s_delay == 4000) {
-            HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
-            rt_tar.st_data.vel_x = 0;
-            fly_s_delay = 0;
-        }
-        fly_s_delay += process_dt_ms;
-    }
-}
-
 inline void onekey_lock(void)
 {
     static uint8_t reseted = 0;
@@ -309,23 +278,3 @@ inline void onekey_lock(void)
         fc_sta.esc_output_unlocked = 0;
     }
 }
-
-////测试高度设定函数
-//void TestHeightSet(uint16_t Hz)
-//{
-//    static uint16_t ActionNumbers=0;
-//
-//    if(ano_mod==3)
-//    {
-//        if(ActionNumbers==0)
-//        {
-//            if( HeightSet(100)==1)
-//            {
-//                ActionNumbers++;
-//            }
-//        }
-//        else if(ActionNumbers==1)
-//        {
-//        }
-//    }
-//}
