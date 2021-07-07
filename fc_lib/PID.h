@@ -13,6 +13,7 @@ typedef struct {
     float Kp;
     float Ki;
     float Kd;//定义比例、积分、微分系数
+    float Out_Limit;//输出限幅
 } PID_IncrementalTypeDef;
 
 typedef struct {
@@ -22,12 +23,13 @@ typedef struct {
     float Ki;
     float Kd; //定义比例、积分、微分系数
     float integral; //定义积分值
-    float Ki_Limit;
-    float Ki_Separation;
+    float Ki_Limit;//积分限幅
+    float Ki_Separation;//积分分离
+    float Out_Limit;//输出限幅
 } PID_PositionalTypeDef;
 
-extern PID_PositionalTypeDef PID_PositionalLine_vy;
-extern PID_PositionalTypeDef PID_PositionalLine_angle;
+extern PID_PositionalTypeDef PID_Positional_vy;
+extern PID_PositionalTypeDef PID_Positional_vx;
 
 float PID_IncrementalRealize(PID_IncrementalTypeDef *PID, float inVal, float target);
 

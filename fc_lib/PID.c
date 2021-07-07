@@ -5,20 +5,23 @@
 #include "PID.h"
 #include <math.h>
 #include <sched.h>
+#include "ano_math.h"
 
-PID_PositionalTypeDef PID_PositionalLine_vy ={
-        .Ki_Limit=0,
-        .Ki_Separation=0,
-        .Kp=1,
-        .Ki=0,
+PID_PositionalTypeDef PID_Positional_vy ={
+        .Out_Limit=10,
+        .Ki_Limit=100,
+        .Ki_Separation=80,
+        .Kp=0.1,
+        .Ki=0.03,
         .Kd=0,
 };
 
-PID_PositionalTypeDef PID_PositionalLine_angle ={
-        .Ki_Limit=0,
-        .Ki_Separation=0,
-        .Kp=1,
-        .Ki=0,
+PID_PositionalTypeDef PID_Positional_vx ={
+        .Out_Limit=10,
+        .Ki_Limit=100,
+        .Ki_Separation=60,
+        .Kp=0.1,
+        .Ki=0.03,
         .Kd=0,
 };
 
@@ -36,7 +39,7 @@ float PID_IncrementalRealize(PID_IncrementalTypeDef *PID, float inVal, float tar
 
     PID->err_last = PID->err_next;
     PID->err_next = PID->err;
-
+    LIMIT(incrementSpeed,-1*PID->Out_Limit,PID->Out_Limit);
 
     return incrementSpeed;
 }
@@ -57,6 +60,7 @@ float PID_PositionalRealize(PID_PositionalTypeDef *PID, float inVal, float targe
 
     incrementSpeed = PID->Kp * PID->err + PID->Ki * PID->integral + PID->Kd * (PID->err - PID->err_last);
     PID->err_last = PID->err;
+//    LIMIT(incrementSpeed,-1*PID->Out_Limit,PID->Out_Limit);
 
     return incrementSpeed;
 }
