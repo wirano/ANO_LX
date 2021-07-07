@@ -14,6 +14,7 @@
 #include "drv_led.h"
 #include <stdio.h>
 #include "drv_buzzer.h"
+#include <math.h>
 
 extern _rt_tar_un rt_tar;
 extern uint16_t ano_mod;
@@ -89,6 +90,7 @@ void process_control() {
     }//BEEP SWITCH
 
     if (mission_flag == 1) {
+        printf("state:%d\r\n",omv.raw_data.find);
         if (mission_step == 1) {
             if (user_takeoff() == 1) {
                 mission_step++;
@@ -149,7 +151,8 @@ uint8_t omv_find_detection() {
 }
 
 uint8_t omv_find_blobs() {
-    static uint8_t Unfind_time = 0, distance, speed;
+    static uint8_t Unfind_time = 0, speed, distance;
+    static float pid_vx, pid_vy;
     static uint32_t move_angle = 0, last_x = 0, last_y = 0;
     if (omv.online == 1 && omv.raw_data.data_flushed == 1) {
         if (omv.raw_data.find == 1) {
@@ -161,9 +164,6 @@ uint8_t omv_find_blobs() {
             omv.raw_data.data_flushed = 0;
             move_angle = (int) (my_atan(omv.block_track_data.offset_y_decoupled_lpf,
                                         omv.block_track_data.offset_x_decoupled_lpf) / 3.14 * 180);
-            distance = (int) sqrt(
-                    omv.block_track_data.offset_y_decoupled_lpf * omv.block_track_data.offset_y_decoupled_lpf +
-                    omv.block_track_data.offset_x_decoupled_lpf * omv.block_track_data.offset_x_decoupled_lpf);
             if ((ABS(last_x - omv.block_track_data.offset_x_decoupled_lpf) < 10) &&
                 ABS((last_y - omv.block_track_data.offset_y_decoupled_lpf) < 10) && distance < 25) {
                 if (Block_delay.delay_finished == 1)
@@ -171,28 +171,31 @@ uint8_t omv_find_blobs() {
             } else {
                 Block_delay.now_delay = 0;
             }
-            printf("Block_delay.now_delay %d\r\n",Block_delay.now_delay);
+            distance= my_2_norm(omv.block_track_data.offset_y_decoupled_lpf,omv.block_track_data.offset_x_decoupled_lpf);
             if (distance > 10) {
-                speed = 0.2 * distance;
-                if (speed > 8)
-                    speed = 8;
+                pid_vy = PID_PositionalRealize(&PID_Positional_vy,
+                                               omv.block_track_data.offset_y_decoupled_lpf, 0);
+                pid_vx = PID_PositionalRealize(&PID_Positional_vx, omv.block_track_data.offset_x_decoupled_lpf,
+                                               0);
+                printf("vx:%f,vy:%f\r\n",pid_vx,pid_vy);
+                speed = my_2_norm(pid_vy,pid_vx);
                 if (move_angle >= 0) {
-                    Horizontal_Move(0.1 * distance, speed, 360 - move_angle);
+                    Horizontal_Move(0.3 * speed, speed, 360 - move_angle);
                 } else if (move_angle < 0) {
-                    Horizontal_Move(0.1 * distance, speed, -move_angle);
+                    Horizontal_Move(0.3 * speed, speed, -move_angle);
                 }
             }
             Unfind_time = 0;
             printf("de block x:%.2f y:%.2f\r\n", omv.block_track_data.offset_x_decoupled_lpf,
                    omv.block_track_data.offset_y_decoupled_lpf);
-            printf("angle :%d distance :%d \r\n", (int) move_angle, distance);
+            printf("angle :%d speed :%d \r\n", (int) move_angle, speed);
             last_x = (int) omv.block_track_data.offset_x_decoupled_lpf;
             last_y = (int) omv.block_track_data.offset_y_decoupled_lpf;
         } else if (omv.raw_data.find == 0) {
             Unfind_time++;
             printf("unfind\r\n");
-//            if (Unfind_time == 20)
-//                OneKey_Hover();
+            if (Unfind_time == 20)
+                OneKey_Hover();
             if (Unfind_time >= 80)
                 return Mission_err;
             else
@@ -214,9 +217,9 @@ uint8_t omv_find_lines() {
             omv_decoupling(20, fc_sta.fc_attitude.rol, fc_sta.fc_attitude.pit);
             omv.raw_data.data_flushed = 0;
             if (omv.raw_data.type == OMV_DATA_LINE || omv.raw_data.type == OMV_DATA_BOTH) {
-                pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, 0);
-                pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
-                                               omv.line_track_data.offset_decoupled_lpf, 0);
+//                pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv.raw_data.line.angle, 0);
+//                pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
+//                                               omv.line_track_data.offset_decoupled_lpf, 0);
                 if ((ABS(omv.raw_data.line.angle) > 5) || (ABS(omv.line_track_data.offset_decoupled_lpf) > 5)) {
                     move_angle = (int) (ABS(omv.raw_data.line.angle) + atan2(ABS(pid_vy), 3) / 3.14 * 180);
                     if (pid_angle > 0) {
@@ -266,12 +269,12 @@ uint8_t omv_find_lines() {
 
 uint8_t user_takeoff() {
     if (Unlock_delay.delay_star == 0) {
-        FC_Unlock();
-        Unlock_delay.delay_star = 1;
+        if (FC_Unlock())
+            Unlock_delay.delay_star = 1;
         Unlock_delay.ami_delay = 3000;
     } else if (Unlock_delay.delay_finished == 1 && Takeoff_delay.delay_star == 0) {
-        OneKey_Takeoff(0); //参数单位：厘米； 0：默认上位机设置的高度。
-        Takeoff_delay.delay_star = 1;
+        if(OneKey_Takeoff(0)) //参数单位：厘米； 0：默认上位机设置的高度。
+            Takeoff_delay.delay_star = 1;
         Takeoff_delay.ami_delay = 3000;
     } else if (Takeoff_delay.delay_finished == 1) {
         Unlock_delay.delay_star = 0;
