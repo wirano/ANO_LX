@@ -8,10 +8,9 @@
 #include "fc_config.h"
 
 #define process_dt_ms   20
+#define Mission_err 2
 #define Mission_finish  1
 #define Mission_Unfinished  0
-#define delay_finish    1
-#define delay_Unfinished    0
 #define LX_LED  0
 #define USER_LED    1
 #define NONE    0
@@ -21,24 +20,29 @@
 #define ALL 4
 #define Mission_over 99
 
+typedef struct {
+    uint8_t delay_star;
+    uint32_t now_delay;
+    uint32_t ami_delay;
+    uint8_t delay_finished;
+} Process_Delay;
+
 extern void onekey_lock(void);
-
-void one_key_takeoff_land();
-
-void light_check(uint8_t group, uint8_t color);
-
-uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360);
+extern Process_Delay Takeoff_delay;
+extern Process_Delay Unlock_delay;
+extern Process_Delay Block_delay;
+extern Process_Delay Land_delay;
 
 void process_control();
 
 uint8_t user_takeoff();
 
-uint8_t process_delay(uint16_t delay_ms);
-
-void fly_s();
+void process_delay(Process_Delay *user_delay);
 
 uint8_t omv_find_detection();
 
-void TestHeightSet(uint16_t Hz);   //测试HeightSet()函数的功能
+uint8_t omv_find_blobs();
+
+uint8_t omv_find_lines() ;
 
 #endif //USER_TASK_H

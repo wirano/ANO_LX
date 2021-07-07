@@ -282,5 +282,5 @@ void ANO_LX_Task()
     //电调输出
     ESC_Output(fc_sta.esc_output_unlocked); //unlocked
     //灯光驱动
-//    LED_1ms_DRV();
+    LED_1ms_DRV();
 }
