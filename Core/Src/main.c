@@ -87,8 +87,8 @@ void SystemClock_Config(void);
 #endif
 
 PUTCHAR_PROTOTYPE {
-    while ((UART4->SR & 0X40U) == 0);
-    UART4->DR = (uint8_t) ch;
+    while ((USART2->SR & 0X40U) == 0);
+    USART2->DR = (uint8_t) ch;
     return ch;
 }
 
@@ -124,7 +124,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   All_Init();
   Scheduler_Setup();
-
   /* USER CODE END 2 */
 
   /* Infinite loop */

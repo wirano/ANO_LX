@@ -31,12 +31,7 @@ extern void onekey_lock(void);
 extern Process_Delay Takeoff_delay;
 extern Process_Delay Unlock_delay;
 extern Process_Delay Block_delay;
-
-void one_key_takeoff_land();
-
-void light_check(uint8_t group, uint8_t color);
-
-uint8_t fly(uint16_t distance_cm, uint16_t velocity, uint16_t dir_angle_0_360);
+extern Process_Delay Land_delay;
 
 void process_control();
 
@@ -44,12 +39,10 @@ uint8_t user_takeoff();
 
 void process_delay(Process_Delay *user_delay);
 
-void fly_s();
-
 uint8_t omv_find_detection();
 
-uint8_t omv_find_lines();
+uint8_t omv_find_blobs();
 
-void TestHeightSet(uint16_t Hz);   //测试HeightSet()函数的功能
+uint8_t omv_find_lines() ;
 
 #endif //USER_TASK_H
