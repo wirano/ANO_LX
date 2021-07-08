@@ -20,6 +20,7 @@ typedef enum
 typedef enum
 {
     OMV_SHAPE_CIRCLE,
+    OMV_SHAPE_HALF_CIRCLE,
     OMV_SHAPE_RECTANGLE,
     OMV_SHAPE_TRIANGLE,
     OMV_SHAPE_NUM
