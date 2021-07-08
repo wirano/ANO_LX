@@ -94,5 +94,6 @@ void TOF_init(uint16_t dev,uint8_t mode,uint16_t time,uint16_t IM);//默认mode=
 #ifdef __cplusplus
 }
 #endif
+#endif
 
 
