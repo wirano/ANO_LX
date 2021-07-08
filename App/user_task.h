@@ -41,4 +41,9 @@ uint8_t omv_find_detection();
 
 void TestHeightSet(uint16_t Hz);   //测试HeightSet()函数的功能
 
+void MyProcessTest(uint16_t Hz);
+
+//圆周运动 (任务频率，半径cm，转速_转/min，旋转角度，初相位_0到360度，转向_0逆1顺)
+uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t all_angle,uint16_t ini_phase,uint8_t direction);
+
 #endif //USER_TASK_H

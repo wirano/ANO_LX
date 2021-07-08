@@ -310,22 +310,114 @@ inline void onekey_lock(void)
     }
 }
 
-////测试高度设定函数
-//void TestHeightSet(uint16_t Hz)
-//{
-//    static uint16_t ActionNumbers=0;
-//
-//    if(ano_mod==3)
-//    {
-//        if(ActionNumbers==0)
-//        {
-//            if( HeightSet(100)==1)
-//            {
-//                ActionNumbers++;
-//            }
-//        }
-//        else if(ActionNumbers==1)
-//        {
-//        }
-//    }
-//}
+void MyProcessTest(uint16_t Hz)
+{
+    static uint16_t State=0;
+
+    if(fc_sta.unlock_cmd==1 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]>1800 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]<2200)  //如果解锁且处于程控模式
+    {
+        if(State==0)
+        {
+            OneKey_Takeoff(100);
+            State++;
+        }
+        else if(State==1)
+        {
+            Wait(Hz,3,&State);
+        }
+        else if(State==2)
+        {
+            if( CircularMotion(Hz,50,6,720,180,1) == 1 )
+            {
+                State++;
+            }
+        }
+        else if(State==3)
+        {
+            Wait(Hz,2,&State);
+        }
+        else if(State==4)
+        {
+            if( CircularMotion(Hz,50,6,720,180,0) == 1 )
+            {
+                State++;
+            }
+        }
+        else if(State==5)
+        {
+            Wait(Hz,6,&State);
+        }
+        else if(State==6)
+        {
+            OneKey_Land();
+            State++;
+        }
+        else if(State==7)
+        {
+
+        }
+    }
+}
+
+//圆周运动 (任务频率，半径cm，转速_转/min，旋转角度，初相位_0到360度，转向_0逆1顺)
+uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t all_angle,uint16_t ini_phase,uint8_t direction)
+{
+    float w_rad=0;
+    float Distance=0;
+    float Speed=0;
+    static uint16_t Angle=0;
+    static uint16_t T_Count=0;
+    static uint8_t StartFlag=1;
+
+    if(direction==1)
+    {
+        if(Angle<(all_angle+ini_phase+90))
+        {
+            T_Count++;
+            w_rad = MY_PPPIII * (float) speed_r_min / 30.0f;
+            Speed = (float) r_cm * w_rad;
+            Distance = Speed / (float) Hz;
+            Angle = (uint16_t) (w_rad * 57.29578f * (float) T_Count / (float) Hz)+ini_phase+90;
+
+            Horizontal_Move((uint16_t)Distance,(uint16_t)Speed,(Angle%360));
+            return 0;
+        }
+        else
+        {
+            T_Count=0;
+            Angle=0;
+            StartFlag=1;
+            return 1;
+        }
+    }
+    else if(direction==0)
+    {
+        if(StartFlag==1)
+        {
+            StartFlag=0;
+            Angle=64980+ini_phase;
+        }
+        else if(Angle>(64980-all_angle+ini_phase+90))
+        {
+            T_Count++;
+            w_rad = MY_PPPIII * (float) speed_r_min / 30.0f;
+            Speed = (float) r_cm * w_rad;
+            Distance = Speed / (float) Hz;
+            Angle =64980 - (uint16_t) (w_rad * 57.29578f * (float) T_Count / (float) Hz)+ini_phase+90;
+
+            Horizontal_Move((uint16_t)Distance,(uint16_t)Speed,(Angle%360));
+            return 0;
+        }
+        else
+        {
+            T_Count=0;
+            Angle=0;
+            StartFlag=1;
+            return 1;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+}
