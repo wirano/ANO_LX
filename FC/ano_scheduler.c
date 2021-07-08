@@ -48,8 +48,8 @@ static void Loop_50Hz(void) //20ms执行一次
     //////////////////////////////////////////////////////////////////////
     user_rgb_tasks(20);
     process_control();
-    omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
-    omv_offline_check(20);
+    omv_data_analysis(&omv[0], omv[0].rec_buffer_p, omv[0].rec_len);
+    omv_offline_check(&omv[0], 20);
     process_delay(&Takeoff_delay);
     process_delay(&Unlock_delay);
     process_delay(&Block_delay);
