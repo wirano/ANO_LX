@@ -41,7 +41,7 @@
 #include "main.h"
 #include <stdio.h>
 
-extern
+extern I2C_HandleTypeDef hi2c2;
 
 int8_t VL53L1_WriteMulti(uint16_t dev, uint16_t index, uint8_t *pdata, uint32_t count) {
 
