@@ -11,10 +11,12 @@
 #include "ano_lx_dt.h"
 #include "drv_uart.h"
 #include "drv_buzzer.h"
+#include "vl53l1_platform.h"
 
 uint8_t All_Init()
 {
     //关闭蜂鸣器
+    MX_I2C2_Init();
     buzzer.freq = 200;
     //LED功能初始化
     MX_GPIO_Init();
@@ -40,6 +42,7 @@ uint8_t All_Init()
     //数传模块初始化
     ANO_DT_Init();
     HAL_Delay(100);
+    TOF_init(0x52,1,100,40);
     //GPS接口初始化
 //    Init_GPS();
     //初始化定时中断

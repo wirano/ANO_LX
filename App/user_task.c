@@ -192,80 +192,80 @@ uint8_t user_takeoff() {
     return Mission_Unfinished;
 }
 
-void process_control() {
-    static uint16_t mission_flag = 0, mission_step = 0;
-    static uint16_t ready = 0;
-    static uint8_t mission_finish, block_f = 0;
-    static uint16_t omv_lose, last_offset = 0;
-    static float pid_angle,pid_vy;
-    static uint16_t move_angle = 0;
-
-    if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
-        //进入程控模式
-        mission_flag = 1;
-        mission_step = 1;
-    } else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 1500) {
-        mission_flag = 0;
-        mission_step = 0;
-        ready = 1;
-    }
-    if (mission_step != 0 && mission_flag == 1) {
-        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
-    } else {
-        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
-        light_check(LX_LED, NONE);
-        light_check(USER_LED, NONE);
-    }//BEEP SWITCH
-    if (mission_flag == 1) {
-        if (mission_step == 1) {
-            if (user_takeoff() == Mission_finish) {
-                mission_step++;
-            }
-        } //程控起飞
-        else if (mission_step == 2) {
-            if (omv.online == 1) {
-                if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
-                    omv.raw_data.data_flushed = 0;
-                    if (omv.raw_data.type == OMV_DATA_LINE) {
-                        light_check(LX_LED, RGB_G);
-                        if (ABS(omv.raw_data.line.angle) > 10) {
-                            pid_angle= PID_PositionalRealize(&PID_PositionalLine_angle,omv.raw_data.line.angle,0);
-//                            pid_vy= PID_PositionalRealize(&PID_PositionalLine_vy,,0);
-                            move_angle=(int)(omv.raw_data.line.angle+ atan2(pid_vy,40)/3.14*180);
-                            if (pid_angle<0) {
-                                Left_Rotate(10, ABS(pid_angle));
-                                Horizontal_Move(40,40,move_angle);
-//                                Horizontal_Move(30, 40, 360 + omv.raw_data.line.angle+PID_PositionalRealize(&PID_PositionalLine_angle, speed[0], setSpeed[0]);
-                                light_check(USER_LED, RGB_B);
-                            }
-                            if (pid_angle>0) {
-                                Right_Rotate(10, ABS(pid_angle));
-                                Horizontal_Move(40,40,move_angle);
-                                light_check(USER_LED, RGB_G);
-                            }
-                        } else{
-                            Horizontal_Move(30, 40, 0);
-                        }
-                    }
-                    if (omv.raw_data.type == OMV_DATA_BLOCK && process_delay(10000) == delay_finish) {
-                        mission_step++;
-                    }
-                }
-                if (omv.online == 1 && (omv.raw_data.find == 0 || omv.raw_data.type == OMV_DATA_BLOCK)) {
-                    Horizontal_Move(30, 40, 0);
-                }
-            }
-            if (omv_find_detection() == Mission_over) {
-                mission_step = Mission_over;
-            }
-        } else if (mission_step == Mission_over) {
-            OneKey_Land();
-            mission_step = 0;
-            ready = 0;
-            omv_lose = 0;
-        }
-    }
-}
+//void process_control() {
+//    static uint16_t mission_flag = 0, mission_step = 0;
+//    static uint16_t ready = 0;
+//    static uint8_t mission_finish, block_f = 0;
+//    static uint16_t omv_lose, last_offset = 0;
+//    static float pid_angle,pid_vy;
+//    static uint16_t move_angle = 0;
+//
+//    if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1) {
+//        //进入程控模式
+//        mission_flag = 1;
+//        mission_step = 1;
+//    } else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 1500) {
+//        mission_flag = 0;
+//        mission_step = 0;
+//        ready = 1;
+//    }
+//    if (mission_step != 0 && mission_flag == 1) {
+//        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_SET);
+//    } else {
+//        HAL_GPIO_WritePin(BEEP_GPIO_Port, BEEP_Pin, GPIO_PIN_RESET);
+//        light_check(LX_LED, NONE);
+//        light_check(USER_LED, NONE);
+//    }//BEEP SWITCH
+//    if (mission_flag == 1) {
+//        if (mission_step == 1) {
+//            if (user_takeoff() == Mission_finish) {
+//                mission_step++;
+//            }
+//        } //程控起飞
+//        else if (mission_step == 2) {
+//            if (omv.online == 1) {
+//                if (omv.raw_data.find == 1 && omv.raw_data.data_flushed == 1) {
+//                    omv.raw_data.data_flushed = 0;
+//                    if (omv.raw_data.type == OMV_DATA_LINE) {
+//                        light_check(LX_LED, RGB_G);
+//                        if (ABS(omv.raw_data.line.angle) > 10) {
+//                            pid_angle= PID_PositionalRealize(&PID_PositionalLine_angle,omv.raw_data.line.angle,0);
+////                            pid_vy= PID_PositionalRealize(&PID_PositionalLine_vy,,0);
+//                            move_angle=(int)(omv.raw_data.line.angle+ atan2(pid_vy,40)/3.14*180);
+//                            if (pid_angle<0) {
+//                                Left_Rotate(10, ABS(pid_angle));
+//                                Horizontal_Move(40,40,move_angle);
+////                                Horizontal_Move(30, 40, 360 + omv.raw_data.line.angle+PID_PositionalRealize(&PID_PositionalLine_angle, speed[0], setSpeed[0]);
+//                                light_check(USER_LED, RGB_B);
+//                            }
+//                            if (pid_angle>0) {
+//                                Right_Rotate(10, ABS(pid_angle));
+//                                Horizontal_Move(40,40,move_angle);
+//                                light_check(USER_LED, RGB_G);
+//                            }
+//                        } else{
+//                            Horizontal_Move(30, 40, 0);
+//                        }
+//                    }
+//                    if (omv.raw_data.type == OMV_DATA_BLOCK && process_delay(10000) == delay_finish) {
+//                        mission_step++;
+//                    }
+//                }
+//                if (omv.online == 1 && (omv.raw_data.find == 0 || omv.raw_data.type == OMV_DATA_BLOCK)) {
+//                    Horizontal_Move(30, 40, 0);
+//                }
+//            }
+//            if (omv_find_detection() == Mission_over) {
+//                mission_step = Mission_over;
+//            }
+//        } else if (mission_step == Mission_over) {
+//            OneKey_Land();
+//            mission_step = 0;
+//            ready = 0;
+//            omv_lose = 0;
+//        }
+//    }
+//}
 
 void fly_s() {
     static uint16_t fly_s_delay = 0;
