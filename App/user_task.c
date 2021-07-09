@@ -327,7 +327,7 @@ void MyProcessTest(uint16_t Hz)
         }
         else if(State==2)
         {
-            if( CircularMotion(Hz,50,6,720,180,1) == 1 )
+            if( CircularMotion(Hz,60,6,720,180,1) == 1 )
             {
                 State++;
             }
@@ -338,7 +338,7 @@ void MyProcessTest(uint16_t Hz)
         }
         else if(State==4)
         {
-            if( CircularMotion(Hz,50,6,720,180,0) == 1 )
+            if( CircularMotion(Hz,60,6,720,180,0) == 1 )
             {
                 State++;
             }
@@ -356,6 +356,119 @@ void MyProcessTest(uint16_t Hz)
         {
 
         }
+    }
+}
+
+//Y轴移动，检测到杆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
+uint8_t Y_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_t speed)
+{
+    if(detect_value==0)
+    {
+        Horizontal_Move(speed/Hz,speed,90+direction*180);
+        return 0;
+    }
+    else if(detect_value>0)
+    {
+        OneKey_Hover();
+        return 1;
+    }
+}
+
+//Y轴调整，根据坐标将机体对准目标，并附加偏移量（任务频率，期望坐标，反馈坐标，偏移量，允许误差,坐标变换_0:与机体坐标系相同_1:与机体坐标系相反,比例系数，积分系数）
+uint8_t Y_axisAdjust(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t offset,uint16_t allow_err,uint8_t coordinate_change,float kp,float ki)
+{
+    float SpeedErr=0;
+    static float Speed_I=0;
+    float Speed=0;
+
+    if(ABS(fb-ex)>allow_err)
+    {
+        if(coordinate_change==1)
+        {
+            SpeedErr=(float)(fb-ex-offset);
+            Speed_I+=Speed/(float)Hz;
+            Speed_I=LIMIT(Speed_I,-15,15);
+            Speed=kp*SpeedErr+ki*Speed_I;
+
+            if(Speed>0)
+            {
+                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,90);
+            }
+            else
+            {
+                Speed=ABS(Speed);
+                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,270);
+            }
+        }
+        else if(coordinate_change==0)
+        {
+            SpeedErr=(float)(fb-ex-offset);
+            Speed_I+=Speed/(float)Hz;
+            Speed_I=LIMIT(Speed_I,-15,15);
+            Speed=kp*SpeedErr+ki*Speed_I;
+
+            if(Speed>0)
+            {
+                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,270);
+            }
+            else
+            {
+                Speed=ABS(Speed);
+                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,90);
+            }
+        }
+        return 0;
+    }
+    else
+    {
+        Speed_I=0;
+        return 1;
+    }
+}
+
+//低通滤波
+double LowPassFilter(float now_data,float last_data,float low_pass_coefficient)
+{
+    return now_data*low_pass_coefficient+last_data*(1-low_pass_coefficient);
+}
+
+//航向调整
+void HeadAdjust(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t speed)
+{
+    if( ABS(ex-fb)<180 )
+    {
+        if(ex>fb)
+        {
+            Right_Rotate(ex-fb,LIMIT(speed,50,90));
+        }
+        else
+        {
+            Left_Rotate(fb-ex,LIMIT(speed,50,90));
+        }
+    }
+    else
+    {
+        if(ex>fb)
+        {
+            Left_Rotate(ex-fb,LIMIT(speed,50,90));
+        }
+        else
+        {
+            Right_Rotate(fb-ex,LIMIT(speed,50,90));
+        }
+    }
+}
+
+//X轴移动命令，根据目标距离和期望距离计算出移动距离(任务频率，期望距离，反馈距离,移动速度)
+void X_axisMove(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t speed)
+{
+    if( (ex-fb)<0 )
+    {
+        Horizontal_Move(ABS(ex-fb),speed,0);
+    }
+    else
+    {
+        Horizontal_Move(ABS(ex-fb),speed,180);
     }
 }
 
@@ -387,6 +500,7 @@ uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t a
             T_Count=0;
             Angle=0;
             StartFlag=1;
+            OneKey_Hover();
             return 1;
         }
     }
@@ -413,11 +527,200 @@ uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t a
             T_Count=0;
             Angle=0;
             StartFlag=1;
+            OneKey_Hover();
             return 1;
         }
     }
     else
     {
         return 0;
+    }
+}
+
+//X轴移动，检测到杆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
+uint8_t X_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_t speed)
+{
+    if(detect_value==0)
+    {
+        Horizontal_Move(speed/Hz,speed,180-180*direction);
+        return 0;
+    }
+    else if(detect_value>0)
+    {
+        OneKey_Hover();
+        return 1;
+    }
+}
+
+//位置调节(任务频率，x轴期望值，y轴期望值，x轴反馈值，y轴反馈值，允许误差范围，坐标变换_0:与机体坐标系相同_1:与机体坐标系相反,比例系数，积分系数)
+uint8_t PositionAdjust(uint16_t Hz,uint16_t x_ex,uint16_t y_ex,uint16_t x_fb,uint16_t y_fb,uint16_t allow_err,uint8_t coordinate_change,float kp,float ki)
+{
+    float XSpeedErr=0;
+    static float XSpeed_I=0;
+    float XSpeed=0;
+
+    float YSpeedErr=0;
+    static float YSpeed_I=0;
+    float YSpeed=0;
+
+    float Speed=0;
+    float Angle=0;
+
+    if( (ABS(x_fb-x_ex)>allow_err) || (ABS(y_fb-y_ex)>allow_err) )
+    {
+        if(coordinate_change==1)
+        {
+            XSpeedErr=(float)(x_ex-x_fb);
+            XSpeed_I+=XSpeed/(float)Hz;
+            XSpeed_I=LIMIT(XSpeed_I,-15,15);
+            XSpeed=kp*XSpeedErr+ki*XSpeed_I;
+
+            YSpeedErr=(float)(y_ex-y_fb);
+            YSpeed_I+=YSpeed/(float)Hz;
+            YSpeed_I=LIMIT(YSpeed_I,-15,15);
+            YSpeed=kp*YSpeedErr+ki*YSpeed_I;
+
+            Speed=my_2_norm(XSpeed,YSpeed);
+
+            if( (XSpeed==0) && (YSpeed==0) )
+            {
+                OneKey_Hover();
+            }
+            else
+            {
+                Angle=(float)atan2((double)XSpeed,(double)YSpeed)*57.29578f;
+                if(Angle<=0)
+                {
+                    Angle=-1*Angle;
+                }
+                else
+                {
+                    Angle=360-Angle;
+                }
+                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,(uint16_t)Angle);
+            }
+            return 0;
+        }
+        else if(coordinate_change==0)
+        {
+            XSpeedErr=(float)(x_fb-x_ex);
+            XSpeed_I+=XSpeed/(float)Hz;
+            XSpeed_I=LIMIT(XSpeed_I,-15,15);
+            XSpeed=kp*XSpeedErr+ki*XSpeed_I;
+
+            YSpeedErr=(float)(y_fb-y_ex);
+            YSpeed_I+=YSpeed/(float)Hz;
+            YSpeed_I=LIMIT(YSpeed_I,-15,15);
+            YSpeed=kp*YSpeedErr+ki*YSpeed_I;
+
+            if( (XSpeed==0) && (YSpeed==0) )
+            {
+                OneKey_Hover();
+            }
+            else
+            {
+                Angle=(float)atan2((double)XSpeed,(double)YSpeed)*57.29578f;
+                if(Angle<=0)
+                {
+                    Angle=-1*Angle;
+                }
+                else
+                {
+                    Angle=360-Angle;
+                }
+                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,(uint16_t)Angle);
+            }
+            return 0;
+        }
+        return 0;
+    }
+    else
+    {
+        XSpeed_I=0;
+        YSpeed_I=0;
+        return 1;
+    }
+}
+
+void Task_2020(uint16_t Hz)
+{
+    static uint16_t State=0;
+
+    if(fc_sta.unlock_cmd==1 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]>1800 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]<2200)  //如果解锁且处于程控模式
+    {
+        if(State==0)
+        {
+            OneKey_Takeoff(100);
+            State++;
+        }
+        else if(State==1)
+        {
+            Wait(Hz,3,&State);
+        }
+        else if(State==2)
+        {
+//            if( Y_axisDetect(Hz,1,image_center,10) )
+//            {
+//                State++;
+//            }
+        }
+        else if(State==3)
+        {
+            if( Y_axisAdjust(Hz,ImageCenter,0,0,2,0,0,0) )
+            {
+                State++;
+            }
+        }
+        else if(State==4)
+        {
+//            HeadAdjust(Hz,ex,fb,60);
+            State++;
+        }
+        else if(State==5)
+        {
+            Wait(Hz,3,&State);
+        }
+        else if(State==6)
+        {
+//            X_axisMove(Hz,60,fb,10);
+            State++;
+        }
+        else if(State==7)
+        {
+            Wait(Hz,5,&State);
+        }
+        else if(State==8)
+        {
+            if( CircularMotion(Hz,60,6,660,180,0) == 1 )
+            {
+                State++;
+            }
+        }
+        else if(State==9)
+        {
+//            if( Y_axisDetect(Hz,1,image_center,10) )
+//            {
+//                State++;
+//            }
+        }
+        else if(State==10)
+        {
+        }
+        else if(State==11)
+        {
+        }
+        else if(State==12)
+        {
+        }
+        else if(State==13)
+        {
+        }
+        else if(State==14)
+        {
+        }
+        else if(State==15)
+        {
+        }
+
     }
 }

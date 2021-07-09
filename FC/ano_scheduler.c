@@ -62,8 +62,7 @@ static void Loop_20Hz(void) //50ms执行一次
 
 static void Loop_10Hz(void) //100ms执行一次
 {
-    MyProcessTest(10);
-
+//    MyProcessTest(10);
 }
 
 static void Loop_5Hz(void) //200ms执行一次
