@@ -8,6 +8,8 @@
 #include "fc_config.h"
 #include "ano_lx.h"
 
+#define USE_VL53L1X
+
 typedef struct
 {
     uint8_t sig_mode; //0==null,1==ppm,2==sbus

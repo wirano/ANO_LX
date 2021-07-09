@@ -24,7 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "ano_scheduler.h"
 #include "board.h"
-
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -122,8 +122,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
-  All_Init();
-  Scheduler_Setup();
+    All_Init();
+    Scheduler_Setup();
   /* USER CODE END 2 */
 
   /* Infinite loop */
