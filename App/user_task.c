@@ -15,6 +15,20 @@
 #include "PID.h"
 #include <math.h>
 #include <stdio.h>
+#include "ano_scheduler.h"
+#include "ano_lx_dt.h"
+
+SensorData Sensor_Data=
+        {
+            .Distance=0,
+            .ImageX=0,
+            .ImageY=0,
+        };
+SensorState Sensor_State=
+        {
+            .TofState=0,
+            .ImageState=0,
+        };
 
 extern _rt_tar_un rt_tar;
 extern uint16_t ano_mod;
@@ -266,6 +280,16 @@ void MyProcessTest(uint16_t Hz)
     }
 }
 
+//利用灵活格式帧将数据发送到匿名上位机
+void DataSendToPC(uint16_t Hz)
+{
+    Send_User_Data(0XF1,sizeof(Sensor_Data),&Sensor_Data);
+    Send_User_Data(0XF2,sizeof(Sensor_State),&Sensor_State);
+//    Send_User_Data(0XF3,1,BufferU32);
+//    Send_User_Data(0XF4,1,BufferS16);
+//    Send_User_Data(0XF5,1,BufferS32);
+}
+
 //Y轴移动，检测到杆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
 uint8_t Y_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_t speed)
 {
@@ -296,6 +320,7 @@ uint8_t Y_axisAdjust(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t offset,uint16_
             Speed_I+=Speed/(float)Hz;
             Speed_I=LIMIT(Speed_I,-15,15);
             Speed=kp*SpeedErr+ki*Speed_I;
+            Speed=LIMIT(Speed,0,15);
 
             if(Speed>0)
             {
@@ -313,6 +338,7 @@ uint8_t Y_axisAdjust(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t offset,uint16_
             Speed_I+=Speed/(float)Hz;
             Speed_I=LIMIT(Speed_I,-15,15);
             Speed=kp*SpeedErr+ki*Speed_I;
+            Speed=LIMIT(Speed,0,15);
 
             if(Speed>0)
             {
@@ -371,11 +397,11 @@ void X_axisMove(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t speed)
 {
     if( (ex-fb)<0 )
     {
-        Horizontal_Move(ABS(ex-fb),speed,0);
+        Horizontal_Move(LIMIT(ABS(ex-fb),0,40),speed,0);
     }
     else
     {
-        Horizontal_Move(ABS(ex-fb),speed,180);
+        Horizontal_Move(LIMIT(ABS(ex-fb),0,40),speed,180);
     }
 }
 
@@ -444,7 +470,7 @@ uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t a
     }
 }
 
-//X轴移动，检测到杆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
+//X轴移动，检测到圆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
 uint8_t X_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_t speed)
 {
     if(detect_value==0)
@@ -487,7 +513,7 @@ uint8_t PositionAdjust(uint16_t Hz,uint16_t x_ex,uint16_t y_ex,uint16_t x_fb,uin
             YSpeed_I=LIMIT(YSpeed_I,-15,15);
             YSpeed=kp*YSpeedErr+ki*YSpeed_I;
 
-            Speed=my_2_norm(XSpeed,YSpeed);
+            Speed=LIMIT( my_2_norm(XSpeed,YSpeed) , 0,15);
 
             if( (XSpeed==0) && (YSpeed==0) )
             {
@@ -519,6 +545,8 @@ uint8_t PositionAdjust(uint16_t Hz,uint16_t x_ex,uint16_t y_ex,uint16_t x_fb,uin
             YSpeed_I+=YSpeed/(float)Hz;
             YSpeed_I=LIMIT(YSpeed_I,-15,15);
             YSpeed=kp*YSpeedErr+ki*YSpeed_I;
+
+            Speed=LIMIT( my_2_norm(XSpeed,YSpeed) , 0,15);
 
             if( (XSpeed==0) && (YSpeed==0) )
             {
@@ -552,6 +580,7 @@ uint8_t PositionAdjust(uint16_t Hz,uint16_t x_ex,uint16_t y_ex,uint16_t x_fb,uin
 void Task_2020(uint16_t Hz)
 {
     static uint16_t State=0;
+    static uint16_t Yaw0=0;
 
     if(fc_sta.unlock_cmd==1 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]>1800 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]<2200)  //如果解锁且处于程控模式
     {
@@ -562,25 +591,26 @@ void Task_2020(uint16_t Hz)
         }
         else if(State==1)
         {
+            Yaw0=(uint16_t)fc_sta.fc_attitude.yaw;    //记录起飞后的航向角
             Wait(Hz,3,&State);
         }
         else if(State==2)
         {
-//            if( Y_axisDetect(Hz,1,image_center,10) )
+//            if( Y_axisDetect(Hz,1,image_center,10) )  //向左移动，等待检测到图像
 //            {
 //                State++;
 //            }
         }
         else if(State==3)
         {
-            if( Y_axisAdjust(Hz,ImageCenter,0,0,2,0,0,0) )
+            if( Y_axisAdjust(Hz,ImageCenter,0,0,2,0,0,0) )  //根据图像将飞机调到正对杆
             {
                 State++;
             }
         }
         else if(State==4)
         {
-//            HeadAdjust(Hz,ex,fb,60);
+            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
             State++;
         }
         else if(State==5)
@@ -589,45 +619,101 @@ void Task_2020(uint16_t Hz)
         }
         else if(State==6)
         {
-//            X_axisMove(Hz,60,fb,10);
+            X_axisMove(Hz,60,distance,10);    //将飞机移动到杆前方60cm处
             State++;
         }
         else if(State==7)
         {
-            Wait(Hz,5,&State);
+            Wait(Hz,4,&State);
         }
         else if(State==8)
         {
-            if( CircularMotion(Hz,60,6,660,180,0) == 1 )
+            if( CircularMotion(Hz,60,4,660,180,0) == 1 ) //绕圈
             {
                 State++;
             }
         }
         else if(State==9)
         {
-//            if( Y_axisDetect(Hz,1,image_center,10) )
+            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
+            State++;
+        }
+        else if(State==10)
+        {
+            Wait(Hz,3,&State);
+        }
+        else if(State==11)
+        {
+//            if( Y_axisDetect(Hz,1,image_center,10) )   //向左移动，等待检测到图像
 //            {
 //                State++;
 //            }
         }
-        else if(State==10)
-        {
-        }
-        else if(State==11)
-        {
-        }
         else if(State==12)
         {
+            if( Y_axisAdjust(Hz,ImageCenter,0,0,2,0,0,0) )  //根据图像将飞机调到正对杆
+            {
+                State++;
+            }
         }
         else if(State==13)
         {
+            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
+            State++;
         }
         else if(State==14)
         {
+            Wait(Hz,3,&State);
         }
         else if(State==15)
         {
+            X_axisMove(Hz,60,distance,10);    //将飞机移动到杆前方60cm处
+            State++;
         }
-
+        else if(State==16)
+        {
+            Wait(Hz,4,&State);
+        }
+        else if(State==17)
+        {
+            if( CircularMotion(Hz,60,4,400,180,1) == 1 ) //绕圈
+            {
+                State++;
+            }
+        }
+        else if(State==18)
+        {
+            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
+            State++;
+        }
+        else if(State==19)
+        {
+            Wait(Hz,3,&State);
+        }
+        else if(State==20)
+        {
+//            if( X_axisDetect(Hz,0,Image,10) )
+//            {
+//                State++;
+//            }
+        }
+        else if(State==21)
+        {
+//            if( PositionAdjust(Hz,ImageCenter,ImageCenter,xfb,yfb,2,0,0,0) )
+//            {
+//                State++;
+//            }
+        }
+        else if(State==22)
+        {
+            OneKey_Land();
+            State++;
+        }
+        else if(State==23)
+        {
+        }
+        else if(State==24)
+        {
+        }
     }
 }

@@ -20,4 +20,6 @@ typedef struct
 void Scheduler_Setup(void);
 void Scheduler_Run(void);
 
+extern uint16_t distance;
+
 #endif //ANO_SCHEDULER_H

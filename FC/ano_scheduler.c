@@ -70,7 +70,7 @@ static void Loop_10Hz(void) //100ms执行一次
 
 static void Loop_5Hz(void) //200ms执行一次
 {
-
+    DataSendToPC(5);
 }
 
 static void Loop_2Hz(void) //500ms执行一次

@@ -22,6 +22,19 @@
 
 #define ImageCenter 320
 
+typedef struct
+{
+    uint16_t Distance;
+    uint16_t ImageX;
+    uint16_t ImageY;
+}__attribute__ ((__packed__)) SensorData;
+
+typedef struct
+{
+    uint8_t TofState;
+    uint8_t ImageState;
+}__attribute__ ((__packed__)) SensorState;
+
 extern void onekey_lock(void);
 
 void one_key_takeoff_land();
@@ -42,6 +55,9 @@ uint8_t omv_find_detection();
 
 void MyProcessTest(uint16_t Hz);
 
+//利用灵活格式帧将数据发送到匿名上位机
+void DataSendToPC(uint16_t Hz);
+
 //Y轴移动，检测到杆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
 uint8_t Y_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_t speed);
 
@@ -60,7 +76,7 @@ void X_axisMove(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t speed);
 //圆周运动 (任务频率，半径cm，转速_转/min，旋转角度，初相位_0到360度，转向_0逆1顺)
 uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t all_angle,uint16_t ini_phase,uint8_t direction);
 
-//X轴移动，检测到杆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
+//X轴移动，检测到圆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
 uint8_t X_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_t speed);
 
 //位置调节(任务频率，x轴期望值，y轴期望值，x轴反馈值，y轴反馈值，允许误差范围，坐标变换_0:与机体坐标系相同_1:与机体坐标系相反,比例系数，积分系数)
