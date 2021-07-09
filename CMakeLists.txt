@@ -1,4 +1,4 @@
-#此文件从模板自动生成! 请勿更改!
+#THIS FILE IS AUTO GENERATED FROM THE TEMPLATE! DO NOT CHANGE!
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_VERSION 1)
 cmake_minimum_required(VERSION 3.19)
@@ -52,6 +52,7 @@ include_directories(Core/Inc Drivers/STM32F4xx_HAL_Driver/Inc Drivers/STM32F4xx_
     FC
     App
     fc_lib
+    ModelDriver/tof
     )
 
 add_definitions(-DUSE_HAL_DRIVER -DSTM32F407xx)
