@@ -47,9 +47,12 @@ static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
     user_rgb_tasks(20);
-//    process_control();
-//    omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
-//    omv_offline_check(20);
+    process_control();
+    omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
+    omv_offline_check(20);
+    process_delay(&Takeoff_delay);
+    process_delay(&Unlock_delay);
+    process_delay(&Block_delay);
     //////////////////////////////////////////////////////////////////////
 }
 
@@ -119,7 +122,7 @@ void Scheduler_Run(void)
         //获取系统当前时间，单位MS
         uint32_t tnow = HAL_GetTick();
         //进行判断，如果当前时间减去上一次执行的时间，大于等于该线程的执行周期，则执行线程
-        if (tnow - sched_tasks[index].last_run >= sched_tasks[index].interval_ticks) {
+         if (tnow - sched_tasks[index].last_run >= sched_tasks[index].interval_ticks) {
 
             //更新线程的执行时间，用于下一次判断
             sched_tasks[index].last_run = tnow;

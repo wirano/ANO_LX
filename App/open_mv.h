@@ -20,6 +20,7 @@ typedef enum
 typedef enum
 {
     OMV_SHAPE_CIRCLE,
+    OMV_SHAPE_HALF_CIRCLE,
     OMV_SHAPE_RECTANGLE,
     OMV_SHAPE_TRIANGLE,
     OMV_SHAPE_NUM
@@ -54,14 +55,22 @@ typedef struct
 typedef struct {
     uint8_t target_loss;
 
+    float offset_lpf_tmp[2];
+
     float offset_decoupled;
+    float offset_decoupled_lpf;
 }_omv_line_track_data_st;
 
 typedef struct {
     uint8_t target_loss;
 
+    float offset_lpf_tmp[2][2]; //[cnt][x/y]
+
     float offset_x_decoupled;
     float offset_y_decoupled;
+
+    float offset_x_decoupled_lpf;
+    float offset_y_decoupled_lpf;
 }_omv_block_track_data_st;
 
 typedef struct

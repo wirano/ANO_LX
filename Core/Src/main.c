@@ -122,9 +122,8 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
-  All_Init();
-  Scheduler_Setup();
-    HAL_GPIO_WritePin(key3_GPIO_Port,key3_Pin,GPIO_PIN_SET);
+    All_Init();
+    Scheduler_Setup();
   /* USER CODE END 2 */
 
   /* Infinite loop */

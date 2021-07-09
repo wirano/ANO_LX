@@ -11,10 +11,12 @@
 #include "ano_lx_dt.h"
 #include "drv_uart.h"
 #include "drv_buzzer.h"
+#include "VL53L1X_api.h"
 
 uint8_t All_Init()
 {
     //关闭蜂鸣器
+    MX_I2C2_Init();
     buzzer.freq = 200;
     //LED功能初始化
     MX_GPIO_Init();
@@ -22,6 +24,7 @@ uint8_t All_Init()
     DrvPwmOutInit();
     HAL_Delay(100);
     //串口2初始化，函数参数为波特率
+    DrvUart1Init();
     DrvUart2Init();
     //串口4初始化，接蓝牙。
     DrvUart4Init();
@@ -40,6 +43,11 @@ uint8_t All_Init()
     //数传模块初始化
     ANO_DT_Init();
     HAL_Delay(100);
+    //VL53L1X
+#ifdef USE_VL53L1X
+    HAL_GPIO_WritePin(IO2_GPIO_Port,IO2_Pin,GPIO_PIN_SET);
+    TOF_init(0x52,1,100,40);
+#endif
     //GPS接口初始化
 //    Init_GPS();
     //初始化定时中断
