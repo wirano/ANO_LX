@@ -124,6 +124,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   All_Init();
   Scheduler_Setup();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
