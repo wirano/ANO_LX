@@ -160,20 +160,20 @@ uint8_t omv_find_blobs() {
             }
             omv_decoupling(&omv[0], 20, fc_sta.fc_attitude.rol, fc_sta.fc_attitude.pit);
             omv[0].raw_data.data_flushed = 0;
-            move_angle = (int) (my_atan(omv[0].block_track_data.offset_y_decoupled_lpf,
-                                        omv[0].block_track_data.offset_x_decoupled_lpf) / 3.14 * 180);
-            if ((ABS(last_x - omv[0].block_track_data.offset_x_decoupled_lpf) < 10) &&
-                ABS((last_y - omv[0].block_track_data.offset_y_decoupled_lpf) < 10) && distance < 25) {
+            move_angle = (int) (my_atan(omv[0].block_track_data[0].offset_y_decoupled_lpf,
+                                        omv[0].block_track_data[0].offset_x_decoupled_lpf) / 3.14 * 180);
+            if ((ABS(last_x - omv[0].block_track_data[0].offset_x_decoupled_lpf) < 10) &&
+                ABS((last_y - omv[0].block_track_data[0].offset_y_decoupled_lpf) < 10) && distance < 25) {
                 if (Block_delay.delay_finished == 1)
                     return Mission_finish;
             } else {
                 Block_delay.now_delay = 0;
             }
-            distance= my_2_norm(omv[0].block_track_data.offset_y_decoupled_lpf,omv[0].block_track_data.offset_x_decoupled_lpf);
+            distance= my_2_norm(omv[0].block_track_data[0].offset_y_decoupled_lpf,omv[0].block_track_data[0].offset_x_decoupled_lpf);
             if (distance > 10) {
                 pid_vy = PID_PositionalRealize(&PID_Positional_vy,
-                                               omv[0].block_track_data.offset_y_decoupled_lpf, 0);
-                pid_vx = PID_PositionalRealize(&PID_Positional_vx, omv[0].block_track_data.offset_x_decoupled_lpf,
+                                               omv[0].block_track_data[0].offset_y_decoupled_lpf, 0);
+                pid_vx = PID_PositionalRealize(&PID_Positional_vx, omv[0].block_track_data[0].offset_x_decoupled_lpf,
                                                0);
                 printf("vx:%f,vy:%f\r\n",pid_vx,pid_vy);
                 speed = my_2_norm(pid_vy,pid_vx);
@@ -184,11 +184,11 @@ uint8_t omv_find_blobs() {
                 }
     }
             Unfind_time = 0;
-            printf("de block x:%.2f y:%.2f\r\n", omv[0].block_track_data.offset_x_decoupled_lpf,
-                   omv[0].block_track_data.offset_y_decoupled_lpf);
+            printf("de block x:%.2f y:%.2f\r\n", omv[0].block_track_data[0].offset_x_decoupled_lpf,
+                   omv[0].block_track_data[0].offset_y_decoupled_lpf);
             printf("angle :%d speed :%d \r\n", (int) move_angle, speed);
-            last_x = (int) omv[0].block_track_data.offset_x_decoupled_lpf;
-            last_y = (int) omv[0].block_track_data.offset_y_decoupled_lpf;
+            last_x = (int) omv[0].block_track_data[0].offset_x_decoupled_lpf;
+            last_y = (int) omv[0].block_track_data[0].offset_y_decoupled_lpf;
         } else if (omv[0].raw_data.find == 0) {
             Unfind_time++;
             printf("unfind\r\n");
@@ -218,8 +218,8 @@ uint8_t omv_find_lines() {
 //                pid_angle = PID_PositionalRealize(&PID_PositionalLine_angle, omv[0].raw_data.line.angle, 0);
 //                pid_vy = PID_PositionalRealize(&PID_PositionalLine_vy,
 //                                               omv[0].line_track_data.offset_decoupled_lpf, 0);
-                if ((ABS(omv[0].raw_data.line.angle) > 5) || (ABS(omv[0].line_track_data.offset_decoupled_lpf) > 5)) {
-                    move_angle = (int) (ABS(omv[0].raw_data.line.angle) + atan2(ABS(pid_vy), 3) / 3.14 * 180);
+                if ((ABS(omv[0].raw_data.line[0].angle) > 5) || (ABS(omv[0].line_track_data[0].offset_decoupled_lpf) > 5)) {
+                    move_angle = (int) (ABS(omv[0].raw_data.line[0].angle) + atan2(ABS(pid_vy), 3) / 3.14 * 180);
                     if (pid_angle > 0) {
                         Left_Rotate(5, ABS(pid_angle));
                         Horizontal_Move(40, 20, 360 - move_angle);
@@ -238,8 +238,8 @@ uint8_t omv_find_lines() {
                     if (Block_delay.delay_finished == 1)
                         return Mission_finish;
                 }
-                printf("line offset:%d angle:%d\r\n", (int) omv[0].raw_data.line.offset, omv[0].raw_data.line.angle);
-                printf("de line offset:%.2f\r\n", omv[0].line_track_data.offset_decoupled_lpf);
+                printf("line offset:%d angle:%d\r\n", (int) omv[0].raw_data.line[0].offset, omv[0].raw_data.line[0].angle);
+                printf("de line offset:%.2f\r\n", omv[0].line_track_data[0].offset_decoupled_lpf);
                 printf("pid_vy:%.2f pid_angle:%.2f\r\n", pid_vy, pid_angle);
             } else if (omv[0].raw_data.type == OMV_DATA_BLOCK) {
                 Block_delay.delay_star = 1;

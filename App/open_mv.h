@@ -12,6 +12,10 @@
 #define RES_QVGA    .resolution.height = 240,.resolution.width = 320
 #define RES_QQVGA   .resolution.height = 120,.resolution.width = 160
 #define RES_QQQQVGA .resolution.height = 60,.resolution.width = 80
+#define RES_NONE    .resolution.height = 0,.resolution.width = 0
+
+#define OMV_LINE_MAX 3
+#define OMV_BLOCK_MAX 2
 
 typedef enum {
     OMV_BAR_ID,
@@ -89,8 +93,10 @@ typedef struct
 {
     uint8_t data_flushed; //数据刷新标志
     _omv_data_type_em type;
-    _omv_block_st block;
-    _omv_line_st line;
+    uint8_t block_num;
+    uint8_t line_num;
+    _omv_block_st block[OMV_BLOCK_MAX];
+    _omv_line_st line[OMV_LINE_MAX];
     uint8_t find;//找到目标
 } _omv_data_st;
 
@@ -113,8 +119,8 @@ typedef struct
 
     _omv_data_st raw_data;
 
-    _omv_block_track_data_st block_track_data;
-    _omv_line_track_data_st line_track_data;
+    _omv_block_track_data_st block_track_data[OMV_BLOCK_MAX];
+    _omv_line_track_data_st line_track_data[OMV_LINE_MAX];
 } omv_st;
 
 extern omv_st omv[OMV_INSTANCE_NUM];
