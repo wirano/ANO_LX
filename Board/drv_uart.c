@@ -22,9 +22,9 @@ void NoUse(uint8_t data)
 }
 
 //串口接收发送快速定义，直接修改此处的函数名称宏，修改成自己的串口解析和发送函数名称即可，注意函数参数格式需统一
-#define U1GetOneByte    NoUse
+#define U1GetOneByte    omv_instance1_get_data
 #define U2GetOneByte    NoUse
-#define U3GetOneByte    omv_get_data
+#define U3GetOneByte    omv_instance0_get_data
 #define U4GetOneByte    NoUse
 #define U5GetOneByte    ANO_DT_LX_Data_Receive_Prepare
 #define U6GetOneByte    AnoOF_GetOneByte

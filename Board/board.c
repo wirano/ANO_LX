@@ -23,6 +23,8 @@ uint8_t All_Init()
     //初始化电调输出功能
     DrvPwmOutInit();
     HAL_Delay(100);
+    //串口1初始化
+    DrvUart1Init();
     //串口2初始化，函数参数为波特率
     DrvUart1Init();
     DrvUart2Init();

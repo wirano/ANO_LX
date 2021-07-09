@@ -12,16 +12,21 @@
 
 #define PIXEL_PER_CM 1.7f  //每厘米对应像素数，与高度焦距有关，需标定
 
-omv_st omv;
+#define OMV_REC_BUFFER_LEN 200
 
-uint8_t _omv_rec_buffer[200];
+omv_st omv[OMV_INSTANCE_NUM] = {
+        {
+                RES_NONE
+        },
+        {
+                RES_NONE
+        }
+};
 
-_omv_line_st _tmp_line[25];
-_omv_block_st _tmp_block[25];
-
-void omv_get_data(uint8_t byte_data)
+void omv_instance0_get_data(uint8_t byte_data)
 {
-    static uint8_t len = 0, rec_pos = 0;
+    static uint8_t len = 0, rec_pos = 0, id;
+    static uint8_t _omv_rec_buffer[OMV_REC_BUFFER_LEN];
 
     _omv_rec_buffer[rec_pos] = byte_data;
 
@@ -32,15 +37,19 @@ void omv_get_data(uint8_t byte_data)
             rec_pos = 0;
         }
     } else if (rec_pos == 1) {
+        id = byte_data;
+        rec_pos++;
+    } else if (rec_pos == 2) {
         len = byte_data;
         rec_pos++;
-    } else if (rec_pos < len + 1) {
+    } else if (rec_pos < len + 2) {
         rec_pos++;
-    } else if (_omv_rec_buffer[rec_pos] == 0x55 && rec_pos == len + 1) {
+    } else if (_omv_rec_buffer[rec_pos] == 0x55 && rec_pos == len + 2) {
 //        omv_data_analysis(_omv_rec_buffer, len + 2);
-        omv.rec_buffer_p = _omv_rec_buffer;
-        omv.rec_len = len + 2;
-        omv.data_received = 1;
+        omv[id].id = id;
+        omv[id].rec_buffer_p = _omv_rec_buffer;
+        omv[id].rec_len = len + 3;
+        omv[id].data_received = 1;
 
         rec_pos = 0;
     } else {
@@ -48,124 +57,164 @@ void omv_get_data(uint8_t byte_data)
     }
 }
 
-void omv_offline_check(uint8_t dT_ms)
+void omv_instance1_get_data(uint8_t byte_data)
 {
-    if (omv.offline_time_cnt < OMV_OFFLINE_TIMEOUT) {
-        omv.offline_time_cnt += dT_ms;
+    static uint8_t len = 0, rec_pos = 0, id;
+    static uint8_t _omv_rec_buffer[OMV_REC_BUFFER_LEN];
+
+    _omv_rec_buffer[rec_pos] = byte_data;
+
+    if (rec_pos == 0) {
+        if (byte_data == 0xaa) {
+            rec_pos++;
+        } else {
+            rec_pos = 0;
+        }
+    } else if (rec_pos == 1) {
+        id = byte_data;
+        rec_pos++;
+    } else if (rec_pos == 2) {
+        len = byte_data;
+        rec_pos++;
+    } else if (rec_pos < len + 2) {
+        rec_pos++;
+    } else if (_omv_rec_buffer[rec_pos] == 0x55 && rec_pos == len + 2) {
+//        omv_data_analysis(_omv_rec_buffer, len + 2);
+        omv[id].id = id;
+        omv[id].rec_buffer_p = _omv_rec_buffer;
+        omv[id].rec_len = len + 3;
+        omv[id].data_received = 1;
+
+        rec_pos = 0;
     } else {
-        omv.online = 0;
+        rec_pos = 0;
     }
 }
 
-void omv_data_analysis(uint8_t *data, uint8_t len)
+void omv_offline_check(omv_st *omv_instance, uint8_t dT_ms)
 {
+    if (omv_instance->offline_time_cnt < OMV_OFFLINE_TIMEOUT) {
+        omv_instance->offline_time_cnt += dT_ms;
+    } else {
+        omv_instance->online = 0;
+    }
+}
+
+void omv_data_analysis(omv_st *omv_instance, uint8_t *data, uint8_t len)
+{
+//    _omv_line_st _tmp_line[25];
+//    _omv_block_st _tmp_block[25];
+
     uint8_t num_line = 0;
     uint8_t num_block = 0;
 
-    if (omv.data_received) {
-        switch (data[2]) {
+    if (omv_instance->data_received) {
+        switch (data[3]) {
             case 0x01: {
-                omv.raw_data.type = OMV_DATA_LINE;
-                omv.raw_data.find = data[3];
-                if (omv.raw_data.find) {
-                    num_line = data[4];
+                omv_instance->raw_data.type = OMV_DATA_LINE;
+                omv_instance->raw_data.find = data[4];
+                if (omv_instance->raw_data.find) {
+                    num_line = data[5];
                 } else {
                     num_line = 0;
                 }
-                for (int i = 0; i < num_line; ++i) {
-                    _tmp_line[i].start_x = ((((int16_t) data[5 + 6 * i + 0]) << 8u) | data[5 + 6 * i + 1]) - 160;
-                    _tmp_line[i].start_y = ((((int16_t) data[5 + 6 * i + 2]) << 8u) | data[5 + 6 * i + 3]) - 120;
-                    _tmp_line[i].len = data[5 + 6 * i + 4];
-                    _tmp_line[i].angle = data[5 + 6 * i + 5];
 
-                    if (_tmp_line[i].angle > 160 || _tmp_line[i].angle < 20) {
-                        if (_tmp_line[i].angle > 90) {
-                            omv.raw_data.line.angle = _tmp_line[i].angle - 180;
-                        } else {
-                            omv.raw_data.line.angle = _tmp_line[i].angle;
-                        }
-                        omv.raw_data.line.offset = (_tmp_line[i].start_x +
-                                                    _tmp_line[i].start_y * tan(_tmp_line[i].angle / 180.0 * 3.14159));
-                    }
+                omv_instance->raw_data.line_num = num_line;
+                for (int i = 0; i < num_line; ++i) {
+                    omv_instance->raw_data.line[i].start_x =
+                            ((((int16_t) data[6 + 6 * i + 0]) << 8u) | data[6 + 6 * i + 1]) -
+                            (omv_instance->resolution.width / 2);
+                    omv_instance->raw_data.line[i].start_y =
+                            ((((int16_t) data[6 + 6 * i + 2]) << 8u) | data[6 + 6 * i + 3]) -
+                            (omv_instance->resolution.height / 2);
+                    omv_instance->raw_data.line[i].len = data[7 + 6 * i + 4];
+                    omv_instance->raw_data.line[i].angle = data[7 + 6 * i + 5];
+                    omv_instance->raw_data.line[i].offset = (omv_instance->raw_data.line[i].start_x +
+                                                             omv_instance->raw_data.line[i].start_y *
+                                                             tan(omv_instance->raw_data.line[i].angle / 180.0 *
+                                                                 3.14159));
                 }
                 break;
             }
 
             case 0x02: {
-                omv.raw_data.type = OMV_DATA_BLOCK;
-                omv.raw_data.find = data[3];
+                omv_instance->raw_data.type = OMV_DATA_BLOCK;
+                omv_instance->raw_data.find = data[4];
 
-                if (omv.raw_data.find) {
-                    num_block = data[4];
+                if (omv_instance->raw_data.find) {
+                    num_block = data[5];
                 } else {
                     num_block = 0;
                 }
 
+                omv_instance->raw_data.block_num = num_block;
                 for (int i = 0; i < num_block; ++i) {
-                    _tmp_block[i].shape = data[5 + 6 * i + 0];
-                    _tmp_block[i].center_x = ((((int16_t) data[5 + 6 * i + 1]) << 8u) | data[5 + 6 * i + 2]) - 160;
-                    _tmp_block[i].center_y = ((((int16_t) data[5 + 6 * i + 3]) << 8u) | data[5 + 6 * i + 4]) - 120;
-                    _tmp_block[i].color = data[5 + 6 * i + 5];
-
-                    if (_tmp_block[i].shape == OMV_SHAPE_CIRCLE) {
-                        omv.raw_data.block.shape = _tmp_block[i].shape;
-                        omv.raw_data.block.center_x = _tmp_block[i].center_x;
-                        omv.raw_data.block.center_y = _tmp_block[i].center_y;
-                    }
+                    omv_instance->raw_data.block[i].shape = data[6 + 10 * i + 0];
+                    omv_instance->raw_data.block[i].center_x =
+                            (int16_t) (data[6 + 10 * i + 1] << 8u | data[6 + 10 * i + 2]) -
+                            (int16_t) (omv_instance->resolution.width / 2);
+                    omv_instance->raw_data.block[i].center_y =
+                            (int16_t) (data[6 + 10 * i + 3] << 8u | data[6 + 10 * i + 4]) -
+                            (int16_t) (omv_instance->resolution.height / 2);
+                    omv_instance->raw_data.block[i].area = (int32_t) (data[6 + 10 * i + 5] << 24u |
+                                                                      data[6 + 10 * i + 6] << 16u |
+                                                                      data[6 + 10 * i + 7] << 8u |
+                                                                      data[6 + 10 * i + 8]);
+                    omv_instance->raw_data.block[i].color = data[6 + 10 * i + 9];
                 }
                 break;
             }
 
             case 0x03: {
-                omv.raw_data.type = OMV_DATA_BOTH;
-                omv.raw_data.find = data[3];
+                omv_instance->raw_data.type = OMV_DATA_BOTH;
+                omv_instance->raw_data.find = data[4];
 
-                if (omv.raw_data.find) {
-                    num_block = data[4];
-                    num_line = data[5];
+                if (omv_instance->raw_data.find) {
+                    num_block = data[5];
+                    num_line = data[6];
                 }
 
+                omv_instance->raw_data.block_num = num_block;
                 for (int i = 0; i < num_block; ++i) {
-                    _tmp_block[i].shape = data[6 + 6 * i + 0];
-                    _tmp_block[i].center_x = ((((int16_t) data[6 + 6 * i + 1]) << 8u) | data[6 + 6 * i + 2]) - 160;
-                    _tmp_block[i].center_y = ((((int16_t) data[6 + 6 * i + 3]) << 8u) | data[6 + 6 * i + 4]) - 120;
-                    _tmp_block[i].color = data[6 + 6 * i + 5];
-
-                    if (_tmp_block[i].shape == OMV_SHAPE_CIRCLE) {
-                        omv.raw_data.block.shape = _tmp_block[i].shape;
-                        omv.raw_data.block.center_x = _tmp_block[i].center_x;
-                        omv.raw_data.block.center_y = _tmp_block[i].center_y;
-                    }
+                    omv_instance->raw_data.block[i].shape = data[6 + 10 * i + 0];
+                    omv_instance->raw_data.block[i].center_x =
+                            (int16_t) (data[6 + 10 * i + 1] << 8u | data[6 + 10 * i + 2]) -
+                            (int16_t) (omv_instance->resolution.width / 2);
+                    omv_instance->raw_data.block[i].center_y =
+                            (int16_t) (data[6 + 10 * i + 3] << 8u | data[6 + 10 * i + 4]) -
+                            (int16_t) (omv_instance->resolution.height / 2);
+                    omv_instance->raw_data.block[i].area = (int32_t) (data[6 + 10 * i + 5] << 24u |
+                                                                      data[6 + 10 * i + 6] << 16u |
+                                                                      data[6 + 10 * i + 7] << 8u |
+                                                                      data[6 + 10 * i + 8]);
+                    omv_instance->raw_data.block[i].color = data[6 + 10 * i + 9];
                 }
 
+                omv_instance->raw_data.line_num = num_line;
                 for (int i = 0; i < num_line; ++i) {
-                    _tmp_line[i].start_x = ((((int16_t) data[6 * num_block + 5 + 6 * i + 0]) << 8u) |
-                                            data[6 * num_block + 5 + 6 * i + 1]);
-                    _tmp_line[i].start_y = ((((int16_t) data[6 * num_block + 5 + 6 * i + 2]) << 8u) |
-                                            data[6 * num_block + 5 + 6 * i + 3]);
-                    _tmp_line[i].len = data[6 * num_block + 5 + 6 * i + 4];
-                    _tmp_line[i].angle = data[6 * num_block + 5 + 6 * i + 5];
-
-                    if (_tmp_line[i].angle > 160 || _tmp_line[i].angle < 20) {
-                        if (_tmp_line[i].angle > 90) {
-                            omv.raw_data.line.angle = _tmp_line[i].angle - 180;
-                        } else {
-                            omv.raw_data.line.angle = _tmp_line[i].angle;
-                        }
-                        omv.raw_data.line.offset = (_tmp_line[i].start_x +
-                                                    _tmp_line[i].start_y * tan(_tmp_line[i].angle / 180.0 * 3.14159));
-                    }
+                    omv_instance->raw_data.line[i].start_x =
+                            ((((int16_t) data[6 + 6 * i + 0]) << 8u) | data[6 + 6 * i + 1]) -
+                            (omv_instance->resolution.width / 2);
+                    omv_instance->raw_data.line[i].start_y =
+                            ((((int16_t) data[6 + 6 * i + 2]) << 8u) | data[6 + 6 * i + 3]) -
+                            (omv_instance->resolution.height / 2);
+                    omv_instance->raw_data.line[i].len = data[7 + 6 * i + 4];
+                    omv_instance->raw_data.line[i].angle = data[7 + 6 * i + 5];
+                    omv_instance->raw_data.line[i].offset = (omv_instance->raw_data.line[i].start_x +
+                                                             omv_instance->raw_data.line[i].start_y *
+                                                             tan(omv_instance->raw_data.line[i].angle / 180.0 *
+                                                                 3.14159));
                 }
-                break;
             }
+                break;
         }
-
-        omv.data_received = 0;
-        omv.raw_data.data_flushed = 1;
-
-        omv.offline_time_cnt = 0;
-        omv.online = 1;
     }
+
+    omv_instance->data_received = 0;
+    omv_instance->raw_data.data_flushed = 1;
+
+    omv_instance->offline_time_cnt = 0;
+    omv_instance->online = 1;
 }
 
 /**
@@ -174,61 +223,79 @@ void omv_data_analysis(uint8_t *data, uint8_t len)
  * @param rol_deg rol角度
  * @param pit_deg pit角度
  */
-void omv_decoupling(uint8_t dt_ms, float rol_deg, float pit_deg)
+void omv_decoupling(omv_st *omv_instance, uint8_t dt_ms, float rol_deg, float pit_deg)
 {
     float alt_add_decoupled;
 
     alt_add_decoupled = fc_sta.fc_attitude.alt_add * cosf(rol_deg / 180.0 * 3.1415926935) *
                         cosf(pit_deg / 180.0 * 3.1415926935);
 
-    switch (omv.raw_data.type) {
+    switch (omv_instance->raw_data.type) {
         case OMV_DATA_LINE:
-            omv.line_track_data.offset_decoupled = omv.raw_data.line.offset +
-                                                   PIXEL_PER_CM * tanf(rol_deg / 180.0 * 3.1415926535) *
-                                                   alt_add_decoupled;
-            omv.line_track_data.offset_decoupled = LIMIT(omv.line_track_data.offset_decoupled, -50, 50);
+            for (int i = 0; i < omv_instance->raw_data.line_num; ++i) {
+                omv_instance->line_track_data[i].offset_decoupled = omv_instance->raw_data.line[i].offset +
+                                                                    PIXEL_PER_CM *
+                                                                    tanf(rol_deg / 180.0 * 3.1415926535) *
+                                                                    alt_add_decoupled;
+                omv_instance->line_track_data[i].offset_decoupled = LIMIT(
+                        omv_instance->line_track_data[i].offset_decoupled,
+                        -50,
+                        50);
 
-            if (omv.line_track_data.target_loss == 0) {
-                //两次低通滤波
-                omv.line_track_data.offset_lpf_tmp[0] +=
-                        0.2f * (omv.line_track_data.offset_decoupled - omv.line_track_data.offset_lpf_tmp[0]);
-                omv.line_track_data.offset_lpf_tmp[1] +=
-                        0.2f * (omv.line_track_data.offset_lpf_tmp[0] - omv.line_track_data.offset_lpf_tmp[1]);
-                omv.line_track_data.offset_decoupled_lpf = omv.line_track_data.offset_lpf_tmp[1];
-            } else {
-                //丢失目标，通过低通滤波减小到0
-                LPF_1_(0.2f, dt_ms * 1e-3f, 0, omv.line_track_data.offset_decoupled_lpf);
+                if (omv_instance->line_track_data[i].target_loss == 0) {
+                    //两次低通滤波
+                    omv_instance->line_track_data[i].offset_lpf_tmp[0] +=
+                            0.2f * (omv_instance->line_track_data[i].offset_decoupled -
+                                    omv_instance->line_track_data[i].offset_lpf_tmp[0]);
+                    omv_instance->line_track_data[i].offset_lpf_tmp[1] +=
+                            0.2f *
+                            (omv_instance->line_track_data[i].offset_lpf_tmp[0] -
+                             omv_instance->line_track_data[i].offset_lpf_tmp[1]);
+                    omv_instance->line_track_data[i].offset_decoupled_lpf = omv_instance->line_track_data[i].offset_lpf_tmp[1];
+                } else {
+                    //丢失目标，通过低通滤波减小到0
+                    LPF_1_(0.2f, dt_ms * 1e-3f, 0, omv_instance->line_track_data[i].offset_decoupled_lpf);
+                }
             }
             break;
 
         case OMV_DATA_BLOCK:
-            omv.block_track_data.offset_x_decoupled = omv.raw_data.block.center_x +
-                                                      PIXEL_PER_CM * tanf(pit_deg / 180.0 * 3.1415926535) *
-                                                      alt_add_decoupled;
-            omv.block_track_data.offset_y_decoupled = omv.raw_data.block.center_y +
-                                                      PIXEL_PER_CM * tanf(rol_deg / 180.0 * 3.1415926535) *
-                                                      alt_add_decoupled;
-            LIMIT(omv.block_track_data.offset_x_decoupled, -80, 80);
-            LIMIT(omv.block_track_data.offset_y_decoupled, -90, 90);
+            for (int i = 0; i < omv_instance->raw_data.block_num; ++i) {
 
-            if (omv.block_track_data.target_loss == 0) {
-                for (int i = 0; i < 2; ++i) {
-                    omv.block_track_data.offset_lpf_tmp[0][0] += 0.2f * (omv.block_track_data.offset_x_decoupled -
-                                                                         omv.block_track_data.offset_lpf_tmp[0][0]);
-                    omv.block_track_data.offset_lpf_tmp[0][1] += 0.2f * (omv.block_track_data.offset_y_decoupled -
-                                                                         omv.block_track_data.offset_lpf_tmp[0][1]);
+                omv_instance->block_track_data[i].offset_x_decoupled = omv_instance->raw_data.block[i].center_x +
+                                                                       PIXEL_PER_CM *
+                                                                       tanf(pit_deg / 180.0 * 3.1415926535) *
+                                                                       alt_add_decoupled;
+                omv_instance->block_track_data[i].offset_y_decoupled = omv_instance->raw_data.block[i].center_y +
+                                                                    PIXEL_PER_CM *
+                                                                    tanf(rol_deg / 180.0 * 3.1415926535) *
+                                                                    alt_add_decoupled;
+                LIMIT(omv_instance->block_track_data[i].offset_x_decoupled, -80, 80);
+                LIMIT(omv_instance->block_track_data[i].offset_y_decoupled, -90, 90);
 
-                    omv.block_track_data.offset_lpf_tmp[1][0] += 0.2f * (omv.block_track_data.offset_lpf_tmp[0][0] -
-                                                                         omv.block_track_data.offset_lpf_tmp[1][0]);
-                    omv.block_track_data.offset_lpf_tmp[1][1] += 0.2f * (omv.block_track_data.offset_lpf_tmp[0][1] -
-                                                                         omv.block_track_data.offset_lpf_tmp[1][1]);
+                if (omv_instance->block_track_data[i].target_loss == 0) {
+                    for (int i = 0; i < 2; ++i) {
+                        omv_instance->block_track_data[i].offset_lpf_tmp[0][0] +=
+                                0.2f * (omv_instance->block_track_data[i].offset_x_decoupled -
+                                        omv_instance->block_track_data[i].offset_lpf_tmp[0][0]);
+                        omv_instance->block_track_data[i].offset_lpf_tmp[0][1] +=
+                                0.2f * (omv_instance->block_track_data[i].offset_y_decoupled -
+                                        omv_instance->block_track_data[i].offset_lpf_tmp[0][1]);
 
-                    omv.block_track_data.offset_x_decoupled_lpf = omv.block_track_data.offset_lpf_tmp[1][0];
-                    omv.block_track_data.offset_y_decoupled_lpf = omv.block_track_data.offset_lpf_tmp[1][1];
+                        omv_instance->block_track_data[i].offset_lpf_tmp[1][0] +=
+                                0.2f * (omv_instance->block_track_data[i].offset_lpf_tmp[0][0] -
+                                        omv_instance->block_track_data[i].offset_lpf_tmp[1][0]);
+                        omv_instance->block_track_data[i].offset_lpf_tmp[1][1] +=
+                                0.2f * (omv_instance->block_track_data[i].offset_lpf_tmp[0][1] -
+                                        omv_instance->block_track_data[i].offset_lpf_tmp[1][1]);
+
+                        omv_instance->block_track_data[i].offset_x_decoupled_lpf = omv_instance->block_track_data[i].offset_lpf_tmp[1][0];
+                        omv_instance->block_track_data[i].offset_y_decoupled_lpf = omv_instance->block_track_data[i].offset_lpf_tmp[1][1];
+                    }
+                } else {
+                    LPF_1_(0.2f, dt_ms * 1e-3f, 0, omv_instance->block_track_data[i].offset_x_decoupled_lpf);
+                    LPF_1_(0.2f, dt_ms * 1e-3f, 0, omv_instance->block_track_data[i].offset_y_decoupled_lpf);
                 }
-            } else {
-                LPF_1_(0.2f, dt_ms * 1e-3f, 0, omv.block_track_data.offset_x_decoupled_lpf);
-                LPF_1_(0.2f, dt_ms * 1e-3f, 0, omv.block_track_data.offset_y_decoupled_lpf);
             }
             break;
     }
