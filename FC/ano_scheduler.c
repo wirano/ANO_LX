@@ -12,7 +12,9 @@
 #include "ano_lx_function.h"
 #include "stdio.h"
 #include "drv_ano_of.h"
+#include "vl53l1_platform.h"
 
+uint16_t distance;
 
 static void Loop_1000Hz(void) //1ms执行一次
 {
@@ -60,6 +62,8 @@ static void Loop_20Hz(void) //50ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
     onekey_lock();
+    VL53L1X_GetDistance(0x52,&distance);
+    printf("%d\r\n",distance);
     //////////////////////////////////////////////////////////////////////
 }
 

@@ -51,6 +51,7 @@ include_directories(${includes}
     FC
     App
     fc_lib
+    ModelDriver/tof
     )
 
 add_definitions(${defines})
