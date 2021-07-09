@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "ano_scheduler.h"
 #include "board.h"
+#include <stdio.h>
 
 /* USER CODE END Includes */
 
@@ -122,7 +123,9 @@ int main(void)
 
   /* Initialize all configured peripherals */
   /* USER CODE BEGIN 2 */
+    printf("1\r\n");
   All_Init();
+    printf("2\r\n");
   Scheduler_Setup();
   HAL_GPIO_WritePin(key3_GPIO_Port,key3_Pin,GPIO_PIN_SET);
   /* USER CODE END 2 */
@@ -973,7 +976,7 @@ void MX_USART1_UART_Init(void)
 
   /* USER CODE END USART1_Init 1 */
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 500000;
+  huart1.Init.BaudRate = 115200;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
