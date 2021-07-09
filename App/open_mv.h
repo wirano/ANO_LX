@@ -59,7 +59,7 @@ typedef struct
 {
     _omv_shape_em shape;
     _omv_color_em color;
-    uint16_t area;
+    uint32_t area;
     int16_t center_x;
     int16_t center_y;
 } _omv_block_st;
