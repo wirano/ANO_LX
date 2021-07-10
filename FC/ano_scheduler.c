@@ -13,6 +13,7 @@
 #include "stdio.h"
 #include "drv_ano_of.h"
 #include "vl53l1_platform.h"
+#include "ano_lx_state.h"
 
 uint16_t distance;
 
@@ -49,8 +50,13 @@ static void Loop_50Hz(void) //20ms执行一次
 {
     //////////////////////////////////////////////////////////////////////
     user_rgb_tasks(20);
-    omv_data_analysis(omv.rec_buffer_p,omv.rec_len);
-    omv_offline_check(20);
+    omv_data_analysis(&omv[0],omv[0].rec_buffer_p,omv[0].rec_len);
+    omv_offline_check(&omv[0],20);
+    omv_data_analysis(&omv[1],omv[1].rec_buffer_p,omv[1].rec_len);
+    omv_offline_check(&omv[1],20);
+    omv_decoupling(&omv[OMV_LAND_ID],20,fc_sta.fc_attitude.rol,fc_sta.fc_attitude.pit);
+    process_delay(&Takeoff_delay);
+    process_delay(&Unlock_delay);
     //////////////////////////////////////////////////////////////////////
 }
 
@@ -59,7 +65,6 @@ static void Loop_20Hz(void) //50ms执行一次
     //////////////////////////////////////////////////////////////////////
     onekey_lock();
     VL53L1X_GetDistance(0x52,&distance);
-    printf("%d\r\n",distance);
     //////////////////////////////////////////////////////////////////////
 }
 
