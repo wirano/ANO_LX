@@ -15,7 +15,7 @@
 #define RES_NONE    .resolution.height = 0,.resolution.width = 0
 
 #define OMV_LINE_MAX 3
-#define OMV_BLOCK_MAX 2
+#define OMV_BLOCK_MAX 4
 
 typedef enum {
     OMV_BAR_ID,

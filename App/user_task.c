@@ -18,19 +18,35 @@
 #include "ano_scheduler.h"
 #include "ano_lx_dt.h"
 
-SensorData Sensor_Data=
+SensorDataSt SensorData=
         {
             .Distance=0,
             .ImageX=0,
             .ImageY=0,
         };
-SensorState Sensor_State=
+SensorStateSt SensorState=
         {
             .TofState=0,
             .ImageState=0,
         };
 
-TargetColorSt TargetColor;
+FlyStateSt FlyState=
+        {
+            .Mode=0,
+            .Yaw0=0,
+            .State=0,
+            .FlyAngle=0,
+            .FlySpeed=0,
+            .Fly2Angle=0,
+            .Fly2Speed=0,
+        };
+
+TempToPCSt TempToPC=
+        {
+            .Area=0,
+        };
+
+TargetMessageSt TargetMessage;
 
 extern _rt_tar_un rt_tar;
 extern uint16_t ano_mod;
@@ -227,11 +243,11 @@ uint8_t user_takeoff() {
     if (Unlock_delay.delay_star == 0) {
         if (FC_Unlock())
             Unlock_delay.delay_star = 1;
-        Unlock_delay.ami_delay = 3000;
+        Unlock_delay.ami_delay = 1500;
     } else if (Unlock_delay.delay_finished == 1 && Takeoff_delay.delay_star == 0) {
-        if(OneKey_Takeoff(0)) //参数单位：厘米； 0：默认上位机设置的高度。
+        if(OneKey_Takeoff(120)) //参数单位：厘米； 0：默认上位机设置的高度。
             Takeoff_delay.delay_star = 1;
-        Takeoff_delay.ami_delay = 3000;
+        Takeoff_delay.ami_delay = 1000;
     } else if (Takeoff_delay.delay_finished == 1) {
         Unlock_delay.delay_star = 0;
         Takeoff_delay.delay_star = 0;
@@ -317,10 +333,10 @@ void MyProcessTest(uint16_t Hz)
 //利用灵活格式帧将数据发送到匿名上位机
 void DataSendToPC(uint16_t Hz)
 {
-    Send_User_Data(0XF1,sizeof(Sensor_Data),&Sensor_Data);
-    Send_User_Data(0XF2,sizeof(Sensor_State),&Sensor_State);
-//    Send_User_Data(0XF3,1,BufferU32);
-//    Send_User_Data(0XF4,1,BufferS16);
+    Send_User_Data(0XF1,sizeof(SensorData),&SensorData);
+    Send_User_Data(0XF2,sizeof(SensorState),&SensorState);
+    Send_User_Data(0XF3,sizeof(FlyState),&FlyState);
+    Send_User_Data(0XF4,sizeof(TempToPC),&TempToPC);
 //    Send_User_Data(0XF5,1,BufferS32);
 }
 
@@ -329,7 +345,7 @@ uint8_t Y_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_
 {
     if(detect_value==0)
     {
-        Horizontal_Move(speed/Hz,speed,90+direction*180);
+        Horizontal_Move(LIMIT(speed/Hz,5,10),speed,90+direction*180);
         return 0;
     }
     else if(detect_value>0)
@@ -345,50 +361,58 @@ uint8_t Y_axisAdjust(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t offset,uint16_
     float SpeedErr=0;
     static float Speed_I=0;
     float Speed=0;
+    uint16_t CenterX=0;
+    static uint16_t CenterXLast=0;
 
-    if(ABS(fb-ex)>allow_err)
+    if (ABS(fb - ex) > allow_err)
     {
-        if(coordinate_change==1)
-        {
-            SpeedErr=(float)(fb-ex-offset);
-            Speed_I+=Speed/(float)Hz;
-            Speed_I=LIMIT(Speed_I,-15,15);
-            Speed=kp*SpeedErr+ki*Speed_I;
-            Speed=LIMIT(Speed,0,15);
+        CenterX = (uint16_t) LowPassFilter(fb, CenterXLast, 0.8f);
+        CenterXLast = CenterX;
 
-            if(Speed>0)
+        if (coordinate_change == 1)
+        {
+            SpeedErr = (float) (CenterX - ex - offset);
+            Speed_I += Speed / (float) Hz;
+            Speed_I = LIMIT(Speed_I, -15, 15);
+            Speed = kp * SpeedErr + ki * Speed_I;
+            Speed = LIMIT(Speed, -15, 15);
+
+            if (Speed > 0)
             {
-                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,90);
-            }
-            else
+                Horizontal_Move((uint16_t) LIMIT((Speed / (float) Hz),5,10), (uint16_t) Speed, 270);
+            } else
             {
-                Speed=ABS(Speed);
-                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,270);
+                Speed = ABS(Speed);
+                Horizontal_Move((uint16_t) LIMIT((Speed / (float) Hz),5,10), (uint16_t) Speed, 90);
             }
         }
-        else if(coordinate_change==0)
+        else if (coordinate_change == 0)
         {
-            SpeedErr=(float)(fb-ex-offset);
-            Speed_I+=Speed/(float)Hz;
-            Speed_I=LIMIT(Speed_I,-15,15);
-            Speed=kp*SpeedErr+ki*Speed_I;
-            Speed=LIMIT(Speed,0,15);
+            SpeedErr = (float) (CenterX - ex - offset);
+            Speed_I += Speed / (float) Hz;
+            Speed_I = LIMIT(Speed_I, -15, 15);
+            Speed = kp * SpeedErr + ki * Speed_I;
+            Speed = LIMIT(Speed, -15, 15);
 
-            if(Speed>0)
+            if (Speed > 0)
             {
-                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,270);
+                Horizontal_Move((uint16_t) LIMIT((Speed / (float) Hz),5,10), (uint16_t) Speed, 90);
+                FlyState.FlyAngle = 90;
+                FlyState.FlySpeed = (uint16_t) Speed;
             }
             else
             {
-                Speed=ABS(Speed);
-                Horizontal_Move((uint16_t)(Speed/(float)Hz),(uint16_t)Speed,90);
+                Speed = ABS(Speed);
+                Horizontal_Move((uint16_t) LIMIT((Speed / (float) Hz),5,10), (uint16_t) Speed, 270);
+                FlyState.FlyAngle = 270;
+                FlyState.FlySpeed = (uint16_t) Speed;
             }
         }
         return 0;
     }
     else
     {
-        Speed_I=0;
+        Speed_I = 0;
         return 1;
     }
 }
@@ -616,19 +640,37 @@ uint8_t PositionAdjust(uint16_t Hz,uint16_t x_ex,uint16_t y_ex,uint16_t x_fb,uin
 void Task_2020(uint16_t Hz)
 {
     static uint16_t State=0;
-    static uint16_t Yaw0=0;
-    static uint8_t Mode=0;
+    static uint16_t mission_flag = 0;
+    static uint16_t ready = 0;
 
-    if(fc_sta.unlock_cmd==1 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]>1800 && rc_in.rc_ch.st_data.ch_[ch_5_aux1]<2200)  //如果解锁且处于程控模式
+    FlyState.State=State;
+
+    if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 2000 && mission_flag == 0 && ready == 1)
+    {
+        //进入程控模式
+        mission_flag = 1;
+        State = 0;
+        ready=0;
+    }
+    else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 1500)
+    {
+        mission_flag = 0;
+        State = 0;
+        ready = 1;
+    }
+
+    if(mission_flag && omv[OMV_BAR_ID].online && omv[OMV_LAND_ID].online)  //如果解锁且处于程控模式
     {
         if(State==0)
         {
-            OneKey_Takeoff(100);
-            State++;
+            if( user_takeoff()==1 )
+            {
+                State++;
+            }
         }
         else if(State==1)
         {
-            Yaw0=(uint16_t)fc_sta.fc_attitude.yaw;    //记录起飞后的航向角
+            FlyState.Yaw0=(int32_t)fc_sta.fc_attitude.yaw;    //记录起飞后的航向角
             Wait(Hz,3,&State);
         }
         else if(State==2)
@@ -637,20 +679,19 @@ void Task_2020(uint16_t Hz)
             {
                 State++;
             }
+//            printf("online=%d\r\n",omv[OMV_BAR_ID].online);
+//            printf("block_num=%d\r\n",omv[OMV_BAR_ID].raw_data.block_num);
         }
         else if(State==3)
         {
-            Mode=ModeJudge(Hz,omv[OMV_BAR_ID].raw_data.block,PixelsNumThr150);
-            State++;
-//            if( Y_axisAdjust(Hz,ImageCenterX,0,0,2,0,0,0) )  //根据图像将飞机调到正对杆
-//            {
-//                State++;
-//            }
+            FlyState.Mode=ModeJudge(Hz,omv[OMV_BAR_ID].raw_data.block,PixelsNumThr150,1,8);
+            if(FlyState.Mode>0)
+            {
+                State++;
+            }
         }
         else if(State==4)
         {
-//            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
-//            State++;
             if( GoToTarget(Hz,1,omv[OMV_BAR_ID].raw_data.block,PixelsNumThr70,ImageCenterX)==1 ) //运动到目标前方约70cm处
             {
                 State++;
@@ -658,14 +699,14 @@ void Task_2020(uint16_t Hz)
         }
         else if(State==5)
         {
-            if( Y_axisAdjust(Hz,ImageCenterX,0,0,2,0,0,0) )  //根据图像将飞机调到正对杆
+            if( Y_axisAdjust(Hz,ImageCenterX,omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target1Index].center_x,0,3,0,0.02,0.01) )  //根据图像将飞机调到正对杆
             {
                 State++;
             }
         }
         else if(State==6)
         {
-            X_axisMove(Hz,60,distance,10);    //将飞机移动到杆前方60cm处
+            X_axisMove(Hz,60,distance,5);    //将飞机移动到杆前方60cm处
             State++;
         }
         else if(State==7)
@@ -674,135 +715,209 @@ void Task_2020(uint16_t Hz)
         }
         else if(State==8)
         {
-            if( CircularMotion(Hz,60,4,660,180,0) == 1 ) //绕圈
+            if( CircularMotion(Hz,60,6,TargetMessage.Target1CircleAngle,180,TargetMessage.Target1CircleDirection) == 1 ) //绕圈
             {
                 State++;
             }
         }
         else if(State==9)
         {
-            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
-            State++;
-        }
-        else if(State==10)
-        {
-            Wait(Hz,3,&State);
-        }
-        else if(State==11)
-        {
-//            if( Y_axisDetect(Hz,1,image_center,10) )   //向左移动，等待检测到图像
-//            {
-//                State++;
-//            }
-        }
-        else if(State==12)
-        {
-            if( Y_axisAdjust(Hz,ImageCenterX,0,0,2,0,0,0) )  //根据图像将飞机调到正对杆
-            {
-                State++;
-            }
-        }
-        else if(State==13)
-        {
-            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
-            State++;
-        }
-        else if(State==14)
-        {
-            Wait(Hz,3,&State);
-        }
-        else if(State==15)
-        {
-            X_axisMove(Hz,60,distance,10);    //将飞机移动到杆前方60cm处
-            State++;
-        }
-        else if(State==16)
-        {
-            Wait(Hz,4,&State);
-        }
-        else if(State==17)
-        {
-            if( CircularMotion(Hz,60,4,400,180,1) == 1 ) //绕圈
-            {
-                State++;
-            }
-        }
-        else if(State==18)
-        {
-            HeadAdjust(Hz,Yaw0,(uint16_t)fc_sta.fc_attitude.yaw,60);  //航向归0
-            State++;
-        }
-        else if(State==19)
-        {
-            Wait(Hz,3,&State);
-        }
-        else if(State==20)
-        {
-//            if( X_axisDetect(Hz,0,Image,10) )
-//            {
-//                State++;
-//            }
-        }
-        else if(State==21)
-        {
-//            if( PositionAdjust(Hz,ImageCenter,ImageCenter,xfb,yfb,2,0,0,0) )
-//            {
-//                State++;
-//            }
-        }
-        else if(State==22)
-        {
             OneKey_Land();
             State++;
         }
-        else if(State==23)
-        {
-        }
-        else if(State==24)
-        {
-        }
+//        else if(State==9)
+//        {
+//            if(FlyState.Mode==1 || FlyState.Mode==2)
+//            {
+//                State++;
+//            }
+//            else if(FlyState.Mode==3 || FlyState.Mode==4)
+//            {
+//                Left_Rotate(180,60);
+//            }
+//        }
+//        else if(State==10)
+//        {
+//            if(FlyState.Mode==1 || FlyState.Mode==2)
+//            {
+//                State++;
+//            }
+//            else if(FlyState.Mode==3 || FlyState.Mode==4)
+//            {
+//                Wait(Hz,4,&State);
+//            }
+//        }
+//        else if(State==11)
+//        {
+//            if(FlyState.Mode==1 || FlyState.Mode==2)
+//            {
+//                if( Y_axisDetect(Hz,1,omv[OMV_BAR_ID].raw_data.block_num,8) )   //向左移动，等待检测到图像
+//                {
+//                    State++;
+//                }
+//            }
+//            else if(FlyState.Mode==3 || FlyState.Mode==4)
+//            {
+//                if( Y_axisDetect(Hz,0,omv[OMV_BAR_ID].raw_data.block_num,8) )   //向右移动，等待检测到图像
+//                {
+//                    State++;
+//                }
+//            }
+//        }
+//        else if(State==12)
+//        {
+//            if( GoToTarget(Hz,2,omv[OMV_BAR_ID].raw_data.block,PixelsNumThr70,ImageCenterX)==1 ) //运动到目标前方约70cm处
+//            {
+//                State++;
+//            }
+//        }
+//        else if(State==13)
+//        {
+//            if( Y_axisAdjust(Hz,ImageCenterX,omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target2Index].center_x,0,3,0,0.02,0.01) )  //根据图像将飞机调到正对杆
+//            {
+//                State++;
+//            }
+//        }
+//        else if(State==14)
+//        {
+//            X_axisMove(Hz,60,distance,5);    //将飞机移动到杆前方60cm处
+//            State++;
+//        }
+//        else if(State==15)
+//        {
+//            Wait(Hz,4,&State);
+//        }
+//        else if(State==16)
+//        {
+//            if( CircularMotion(Hz,60,6,TargetMessage.Target2CircleAngle,180,TargetMessage.Target2CircleDirection) == 1 ) //绕圈
+//            {
+//                State++;
+//            }
+//        }
+//        else if(State==17)
+//        {
+//            if(FlyState.Mode==1 || FlyState.Mode==2)
+//            {
+//                State++;
+//            }
+//            else if(FlyState.Mode==3 || FlyState.Mode==4)
+//            {
+//                Right_Rotate(180,60);
+//            }
+//        }
+//        else if(State==19)
+//        {
+//            if(FlyState.Mode==1 || FlyState.Mode==2)
+//            {
+//                State++;
+//            }
+//            else if(FlyState.Mode==3 || FlyState.Mode==4)
+//            {
+//                Wait(Hz,4,&State);
+//            }
+//        }
+//        else if(State==20)
+//        {
+////            if( X_axisDetect(Hz,0,Image,10) )
+////            {
+////                State++;
+////            }
+//        }
+//        else if(State==21)
+//        {
+////            if( PositionAdjust(Hz,ImageCenter,ImageCenter,xfb,yfb,2,0,0,0) )
+////            {
+////                State++;
+////            }
+//        }
+//        else if(State==22)
+//        {
+//            OneKey_Land();
+//            State++;
+//        }
+    }
+    else if(omv[OMV_BAR_ID].online ==0 || omv[OMV_LAND_ID].online ==0 )
+    {
+        OneKey_Land();
     }
 }
 
 //根据最右方杆子的像素点个数判断两个杆的摆放位置
-uint8_t ModeJudge(uint16_t Hz,_omv_block_st *block_data,uint32_t pixels_num_thr)
+uint8_t ModeJudge(uint16_t Hz,_omv_block_st *block_data,uint32_t pixels_num_thr,uint8_t direction,uint16_t speed)
 {
     uint8_t RightBarIndex=0;
 
-    if( (block_data->center_x) >= ((block_data+1)->center_x) )
+    printf("Y=%d\r\n",block_data->center_y);
+    if( ABS(block_data->center_y - ImageCenterY)<30 )  //判断Y坐标是否在中心
     {
-        RightBarIndex=0;
+        if( (block_data->center_x) >= ((block_data+1)->center_x) )
+        {
+            RightBarIndex=0;
+        }
+        else
+        {
+            RightBarIndex=1;
+        }
+
+        if( ((block_data+RightBarIndex)->area) < pixels_num_thr )   //右侧杆距离较远
+        {
+            if( ((block_data+RightBarIndex)->color) == OMV_COLOR_RED )  //右侧杆为红色
+            {
+                TargetMessage.Target1Color=OMV_COLOR_RED;
+                TargetMessage.Target2Color=OMV_COLOR_GREEN;
+                TargetMessage.Target1CircleAngle=450;
+                TargetMessage.Target2CircleAngle=450;
+                TargetMessage.Target1Index=2;
+                TargetMessage.Target2Index=3;
+                TargetMessage.Target1CircleDirection=1;
+                TargetMessage.Target2CircleDirection=0;
+                return 3;
+            }
+            else if( ((block_data+RightBarIndex)->color) ==OMV_COLOR_GREEN)  //右侧杆为绿色
+            {
+                TargetMessage.Target1Color=OMV_COLOR_GREEN;
+                TargetMessage.Target2Color=OMV_COLOR_RED;
+                TargetMessage.Target1CircleAngle=630;
+                TargetMessage.Target2CircleAngle=630;
+                TargetMessage.Target1Index=3;
+                TargetMessage.Target2Index=2;
+                TargetMessage.Target1CircleDirection=0;
+                TargetMessage.Target2CircleDirection=1;
+                return 4;
+            }
+        }
+        else   //右侧杆距离较近
+        {
+            if( ((block_data+RightBarIndex)->color) == OMV_COLOR_RED )  //右侧杆为红色
+            {
+                TargetMessage.Target1Color=OMV_COLOR_RED;
+                TargetMessage.Target2Color=OMV_COLOR_GREEN;
+                TargetMessage.Target1CircleAngle=450;
+                TargetMessage.Target2CircleAngle=630;
+                TargetMessage.Target1Index=2;
+                TargetMessage.Target2Index=3;
+                TargetMessage.Target1CircleDirection=1;
+                TargetMessage.Target2CircleDirection=0;
+                return 1;
+            }
+            else if( ((block_data+RightBarIndex)->color) ==OMV_COLOR_GREEN)  //右侧杆为绿色
+            {
+                TargetMessage.Target1Color=OMV_COLOR_GREEN;
+                TargetMessage.Target2Color=OMV_COLOR_RED;
+                TargetMessage.Target1CircleAngle=630;
+                TargetMessage.Target2CircleAngle=450;
+                TargetMessage.Target1Index=3;
+                TargetMessage.Target2Index=2;
+                TargetMessage.Target1CircleDirection=0;
+                TargetMessage.Target2CircleDirection=1;
+                return 2;
+            }
+        }
     }
     else
     {
-        RightBarIndex=1;
-    }
-
-    if( ((block_data+RightBarIndex)->area) < pixels_num_thr )   //右侧杆距离较远
-    {
-        if( ((block_data+RightBarIndex)->color) == OMV_COLOR_RED )  //右侧杆为红色
-        {
-            TargetColor.Target1=OMV_COLOR_RED;
-            return 3;
-        }
-        else if( ((block_data+RightBarIndex)->color) ==OMV_COLOR_GREEN)  //右侧杆为绿色
-        {
-            TargetColor.Target2=OMV_COLOR_GREEN;
-            return 4;
-        }
-    }
-    else   //右侧杆距离较近
-    {
-        if( ((block_data+RightBarIndex)->color) == OMV_COLOR_RED )  //右侧杆为红色
-        {
-            TargetColor.Target1=OMV_COLOR_RED;
-            return 1;
-        }
-        else if( ((block_data+RightBarIndex)->color) ==OMV_COLOR_GREEN)  //右侧杆为绿色
-        {
-            TargetColor.Target2=OMV_COLOR_GREEN;
-            return 2;
-        }
+        Horizontal_Move(LIMIT(speed/Hz,5,10),speed,90+direction*180);
+        return 0;
     }
 }
 
@@ -814,7 +929,7 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
 
     if(target_num==1)
     {
-        if( (block_data->color)==TargetColor.Target1 )
+        if( (block_data->color)==TargetMessage.Target1Color)
         {
             CenterX=(uint16_t)LowPassFilter(block_data->center_x,CenterXLast,0.8f);
             CenterXLast=CenterX;
@@ -823,19 +938,25 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
             {
                 if( ABS(CenterX-ex_center)<10 )   //如果中心对准，只需要向前飞行
                 {
-                    Horizontal_Move(10/Hz,10,0);
+                    FlyState.FlyAngle=0;
+                    FlyState.FlySpeed=10;
+                    Horizontal_Move(LIMIT(10/Hz,5,15),10,0);
                     return 0;
                 }
                 else
                 {
                     if(CenterX>ex_center)
                     {
-                        Horizontal_Move(5/Hz,5,45);
+                        FlyState.FlyAngle=45;
+                        FlyState.FlySpeed=15;
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,20);
                         return 0;
                     }
                     else
                     {
-                        Horizontal_Move(5/Hz,5,315);
+                        FlyState.FlyAngle=315;
+                        FlyState.FlySpeed=15;
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,340);
                         return 0;
                     }
                 }
@@ -847,7 +968,7 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
                 return 1;
             }
         }
-        else if( ((block_data+1)->color)==TargetColor.Target1 )
+        else if( ((block_data+1)->color)==TargetMessage.Target1Color && omv[OMV_BAR_ID].raw_data.block_num==2 )
         {
             CenterX=(uint16_t)LowPassFilter((block_data+1)->center_x,CenterXLast,0.8f);
             CenterXLast=CenterX;
@@ -856,19 +977,19 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
             {
                 if( ABS(CenterX-ex_center)<10 )   //如果中心对准，只需要向前飞行
                 {
-                    Horizontal_Move(10/Hz,10,0);
+                    Horizontal_Move(LIMIT(10/Hz,5,15),10,0);
                     return 0;
                 }
                 else
                 {
                     if(CenterX>ex_center)
                     {
-                        Horizontal_Move(5/Hz,5,45);
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,20);
                         return 0;
                     }
                     else
                     {
-                        Horizontal_Move(5/Hz,5,315);
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,340);
                         return 0;
                     }
                 }
@@ -887,7 +1008,7 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
     }
     else if(target_num==2)
     {
-        if( (block_data->color)==TargetColor.Target2 )
+        if( (block_data->color)==TargetMessage.Target2Color )
         {
             CenterX=(uint16_t)LowPassFilter(block_data->center_x,CenterXLast,0.8f);
             CenterXLast=CenterX;
@@ -896,19 +1017,19 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
             {
                 if( ABS(CenterX-ex_center)<10 )   //如果中心对准，只需要向前飞行
                 {
-                    Horizontal_Move(10/Hz,10,0);
+                    Horizontal_Move(LIMIT(10/Hz,5,15),10,0);
                     return 0;
                 }
                 else
                 {
                     if(CenterX>ex_center)
                     {
-                        Horizontal_Move(5/Hz,5,45);
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,20);
                         return 0;
                     }
                     else
                     {
-                        Horizontal_Move(5/Hz,5,315);
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,340);
                         return 0;
                     }
                 }
@@ -920,7 +1041,7 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
                 return 1;
             }
         }
-        else if( ((block_data+1)->color)==TargetColor.Target2 )
+        else if( ((block_data+1)->color)==TargetMessage.Target2Color && omv[OMV_BAR_ID].raw_data.block_num==2)
         {
             CenterX=(uint16_t)LowPassFilter((block_data+1)->center_x,CenterXLast,0.8f);
             CenterXLast=CenterX;
@@ -929,19 +1050,19 @@ uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint
             {
                 if( ABS(CenterX-ex_center)<10 )   //如果中心对准，只需要向前飞行
                 {
-                    Horizontal_Move(10/Hz,10,0);
+                    Horizontal_Move(LIMIT(10/Hz,5,15),10,0);
                     return 0;
                 }
                 else
                 {
                     if(CenterX>ex_center)
                     {
-                        Horizontal_Move(5/Hz,5,45);
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,20);
                         return 0;
                     }
                     else
                     {
-                        Horizontal_Move(5/Hz,5,315);
+                        Horizontal_Move(LIMIT(15/Hz,5,15),10,340);
                         return 0;
                     }
                 }

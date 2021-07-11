@@ -61,7 +61,7 @@ static inline void RC_Data_Task(float dT_s)
             LX_Change_Mode(1);
             mod_f[0] = 1;
         }
-        else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1700||(ABS(tmp_ch_dz[ch_1_rol])>30)||(ABS(tmp_ch_dz[ch_2_pit])>30)||(ABS(tmp_ch_dz[ch_3_thr])>30)||(ABS(tmp_ch_dz[ch_4_yaw])>30))
+        else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] < 1700||(ABS(tmp_ch_dz[ch_1_rol])>100)||(ABS(tmp_ch_dz[ch_2_pit])>100)||(ABS(tmp_ch_dz[ch_3_thr])>100)||(ABS(tmp_ch_dz[ch_4_yaw])>100))
         {
             LX_Change_Mode(2);
             mod_f[0] = 2;

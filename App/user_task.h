@@ -22,22 +22,38 @@
 #define Mission_over 99
 
 #define ImageCenterX 320
-#define ImageCenterY 240
-#define PixelsNumThr150 2000
-#define PixelsNumThr70 4000
+#define ImageCenterY 220
+#define PixelsNumThr150 3500
+#define PixelsNumThr70 10000
 
 typedef struct
 {
     uint16_t Distance;
     uint16_t ImageX;
     uint16_t ImageY;
-}__attribute__ ((__packed__)) SensorData;
+}__attribute__ ((__packed__)) SensorDataSt;
 
 typedef struct
 {
     uint8_t TofState;
     uint8_t ImageState;
-}__attribute__ ((__packed__)) SensorState;
+}__attribute__ ((__packed__)) SensorStateSt;
+
+typedef struct
+{
+    uint8_t Mode;
+    int32_t Yaw0;
+    uint16_t State;
+    uint16_t FlyAngle;
+    uint16_t FlySpeed;
+    uint16_t Fly2Angle;
+    uint16_t Fly2Speed;
+}__attribute__ ((__packed__)) FlyStateSt;
+
+typedef struct
+{
+    uint32_t Area;
+}TempToPCSt;
 
 typedef struct {
     uint8_t delay_star;
@@ -48,9 +64,15 @@ typedef struct {
 
 typedef struct
 {
-    _omv_color_em Target1;
-    _omv_color_em Target2;
-}TargetColorSt;
+    _omv_color_em Target1Color;
+    _omv_color_em Target2Color;
+    uint16_t Target1CircleAngle;
+    uint16_t Target2CircleAngle;
+    uint8_t Target1Index;
+    uint8_t Target2Index;
+    uint8_t Target1CircleDirection;
+    uint8_t Target2CircleDirection;
+}TargetMessageSt;
 
 extern void onekey_lock(void);
 
@@ -101,12 +123,17 @@ uint8_t PositionAdjust(uint16_t Hz,uint16_t x_ex,uint16_t y_ex,uint16_t x_fb,uin
 
 void Task_2020(uint16_t Hz);
 
-//根据最右方杆子的像素点个数判断两个杆的摆放位置
-uint8_t ModeJudge(uint16_t Hz,_omv_block_st *block_data,uint32_t pixels_num_thr);
+//根据最右方杆子的像素点个数判断两个杆的摆放位置(任务频率，图像数据数组，像素阈值，检测时y坐标不在中心时移动的方向 0负1正,移动速度)
+uint8_t ModeJudge(uint16_t Hz,_omv_block_st *block_data,uint32_t pixels_num_thr,uint8_t direction,uint16_t speed);
 
 //向目标运动
 uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint32_t pixels_num_thr,uint16_t ex_center);
 
 extern Process_Delay Takeoff_delay;
 extern Process_Delay Unlock_delay;
+
+extern SensorDataSt SensorData;
+extern SensorStateSt SensorState;
+extern FlyStateSt FlyState;
+extern TempToPCSt TempToPC;
 #endif //USER_TASK_H

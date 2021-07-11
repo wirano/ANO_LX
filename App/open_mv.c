@@ -148,6 +148,13 @@ void omv_data_analysis(omv_st *omv_instance, uint8_t *data, uint8_t len)
                 }
 
                 omv_instance->raw_data.block_num = num_block;
+                for (int i = 0; i < 4; ++i) {
+                    omv_instance->raw_data.block[i].shape = 0;
+                    omv_instance->raw_data.block[i].center_x =0;
+                    omv_instance->raw_data.block[i].center_y =0;
+                    omv_instance->raw_data.block[i].area = 0;
+                    omv_instance->raw_data.block[i].color = 0;
+                }
                 for (int i = 0; i < num_block; ++i) {
                     omv_instance->raw_data.block[i].shape = data[6 + 10 * i + 0];
                     omv_instance->raw_data.block[i].center_x =
@@ -161,6 +168,15 @@ void omv_data_analysis(omv_st *omv_instance, uint8_t *data, uint8_t len)
                                                                       data[6 + 10 * i + 7] << 8u |
                                                                       data[6 + 10 * i + 8]);
                     omv_instance->raw_data.block[i].color = data[6 + 10 * i + 9];
+                }
+                for(int j=0;j<2;j++) {
+                    if (omv_instance->raw_data.block[j].color == OMV_COLOR_RED) {
+                        omv_instance->raw_data.block[2].center_x = omv_instance->raw_data.block[j].center_x;
+                        omv_instance->raw_data.block[2].area = omv_instance->raw_data.block[j].area;
+                    } else if (omv_instance->raw_data.block[j].color == OMV_COLOR_GREEN) {
+                        omv_instance->raw_data.block[3].center_x = omv_instance->raw_data.block[j].center_x;
+                        omv_instance->raw_data.block[3].area = omv_instance->raw_data.block[j].area;
+                    }
                 }
                 break;
             }
