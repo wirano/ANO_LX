@@ -262,8 +262,8 @@ inline void onekey_lock(uint16_t Hz)
     static uint16_t TimeCount=0;
     static uint16_t State=0;
 
-    if(State==0)
-    {
+//    if(State==0)
+//    {
         if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000) {
             if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
                 FC_Lock();
@@ -283,56 +283,61 @@ inline void onekey_lock(uint16_t Hz)
             }
             fc_sta.esc_output_unlocked = 0;
         }
-    }
-    else if(State==1)
-    {
-        if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 2000)
-        {
-            fc_sta.esc_output_unlocked = 1;
-        }
-        else if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000)
-        {
-            State=2;
-        }
-    }
-    else if(State==2)
-    {
-        if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 2000)
-        {
-            State=3;
-        }
-    }
-    else if(State==3)
-    {
-        if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000)
-        {
-            State=4;
-        }
-    }
-    else if(State==4)
-    {
-        if(TimeCount<=Hz*2)
-        {
-            if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
-                FC_Lock();
-            }
-            fc_sta.esc_output_unlocked = 0;
-            State=1;
-        }
-        else
-        {
-            State=1;
-        }
-    }
-
-    if(State>1)
-    {
-        TimeCount++;
-    }
-    else
-    {
-        TimeCount=0;
-    }
+//    }
+//    else if(State==1)
+//    {
+//        if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 2000)
+//        {
+//            fc_sta.esc_output_unlocked = 1;
+//        }
+//        else if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000)
+//        {
+//            State=2;
+//        }
+//    }
+//    else if(State==2)
+//    {
+//        if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 2000)
+//        {
+//            State=3;
+//        }
+//    }
+//    else if(State==3)
+//    {
+//        if (rc_in.rc_ch.st_data.ch_[ch_8_aux4] == 1000)
+//        {
+//            State=4;
+//        }
+//    }
+//    else if(State==4)
+//    {
+//        if(TimeCount<=Hz*2)
+//        {
+//            if (fc_sta.unlock_sta || fc_sta.unlock_cmd) {
+//                FC_Lock();
+//            }
+//            fc_sta.esc_output_unlocked = 0;
+//            State=1;
+//        }
+//        else
+//        {
+//            State=1;
+//        }
+//    }
+//
+//    if(State>1)
+//    {
+//        if(TimeCount<=Hz*2) {
+//            TimeCount++;
+//        }
+//        else{
+//            State=1;
+//        }
+//    }
+//    else
+//    {
+//        TimeCount=0;
+//    }
 }
 
 void MyProcessTest(uint16_t Hz)
