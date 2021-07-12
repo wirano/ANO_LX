@@ -173,9 +173,15 @@ void omv_data_analysis(omv_st *omv_instance, uint8_t *data, uint8_t len)
                     if (omv_instance->raw_data.block[j].color == OMV_COLOR_RED) {
                         omv_instance->raw_data.block[2].center_x = omv_instance->raw_data.block[j].center_x;
                         omv_instance->raw_data.block[2].area = omv_instance->raw_data.block[j].area;
+                        omv_instance->raw_data.block[2].center_y = omv_instance->raw_data.block[j].center_y;
+                        omv_instance->raw_data.block[2].color = omv_instance->raw_data.block[j].color;
+                        omv_instance->raw_data.block[2].shape = omv_instance->raw_data.block[j].shape;
                     } else if (omv_instance->raw_data.block[j].color == OMV_COLOR_GREEN) {
                         omv_instance->raw_data.block[3].center_x = omv_instance->raw_data.block[j].center_x;
                         omv_instance->raw_data.block[3].area = omv_instance->raw_data.block[j].area;
+                        omv_instance->raw_data.block[3].center_y = omv_instance->raw_data.block[j].center_y;
+                        omv_instance->raw_data.block[3].color = omv_instance->raw_data.block[j].color;
+                        omv_instance->raw_data.block[3].shape = omv_instance->raw_data.block[j].shape;
                     }
                 }
                 break;

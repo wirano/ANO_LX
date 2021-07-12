@@ -21,10 +21,10 @@
 #define ALL 4
 #define Mission_over 99
 
-#define ImageCenterX 320
+#define ImageCenterX 350
 #define ImageCenterY 220
 #define PixelsNumThr150 3500
-#define PixelsNumThr70 10000
+#define PixelsNumThr80 8000
 
 typedef struct
 {
@@ -72,9 +72,19 @@ typedef struct
     uint8_t Target2Index;
     uint8_t Target1CircleDirection;
     uint8_t Target2CircleDirection;
+    uint8_t Target1DetectDirection;
+    uint8_t Target2DetectDirection;
 }TargetMessageSt;
 
-extern void onekey_lock(void);
+//typedef enum
+//{
+//    Anticlockwise,
+//    Clockwise,
+//    Left=0,
+//    Right,
+//}DirectionEnum;
+
+extern void onekey_lock(uint16_t Hz);
 
 void one_key_takeoff_land();
 
@@ -109,8 +119,8 @@ double LowPassFilter(float now_data,float last_data,float low_pass_coefficient);
 //航向调整
 void HeadAdjust(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t speed);
 
-//X轴移动命令，根据目标距离和期望距离计算出移动距离(任务频率，期望距离，反馈距离，移动速度)
-void X_axisMove(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t speed);
+//X轴移动命令，根据目标距离和期望距离计算出移动距离(任务频率，期望距离，反馈距离，移动速度,允许误差，校验时间)
+uint8_t X_axisMove(uint16_t Hz,uint16_t ex,uint16_t fb,uint16_t allow_err,float kp,float ki);
 
 //圆周运动 (任务频率，半径cm，转速_转/min，旋转角度，初相位_0到360度，转向_0逆1顺)
 uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t all_angle,uint16_t ini_phase,uint8_t direction);
@@ -127,7 +137,10 @@ void Task_2020(uint16_t Hz);
 uint8_t ModeJudge(uint16_t Hz,_omv_block_st *block_data,uint32_t pixels_num_thr,uint8_t direction,uint16_t speed);
 
 //向目标运动
-uint8_t GoToTarget(uint16_t Hz,uint8_t target_num,_omv_block_st *block_data,uint32_t pixels_num_thr,uint16_t ex_center);
+uint8_t GoToTarget(uint16_t Hz,uint32_t fb_pixels_num,uint32_t pixels_num_thr,uint16_t ex_center_x,uint16_t fb_center_x);
+
+//校验某一个值是否在一段时间内等于某一个值(任务频率，校验时长，需要检测的量，1：正校验_0：反校验（检验某一值！=ex）)
+uint8_t CheckTime_s(uint16_t Hz,uint8_t check_s,uint16_t ex,uint8_t check_value,uint8_t direction);
 
 extern Process_Delay Takeoff_delay;
 extern Process_Delay Unlock_delay;
