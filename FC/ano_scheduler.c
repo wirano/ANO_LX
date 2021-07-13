@@ -68,8 +68,15 @@ static void Loop_20Hz(void) //50ms执行一次
     distance/=10;
     SensorData.Distance=distance;
 
+    TempToPC.Area=omv[OMV_BAR_ID].raw_data.block[3].area;
+    TempToPC.Area2=omv[OMV_BAR_ID].raw_data.block[2].area;
+    TempToPC.Area3=omv[OMV_LAND_ID].raw_data.block[0].area;
+    SensorData.ImageX=omv[OMV_LAND_ID].raw_data.block[0].center_x;
+    SensorData.ImageY=omv[OMV_LAND_ID].raw_data.block[0].center_y;
+    DataSendToPC(20);
 //    MyProcessTest(20);
     Task_2020(20);
+//    CheckTime_s(20,1,1,PositionAdjust(20,ImageCenterY,ImageCenterX,omv[OMV_LAND_ID].raw_data.block[0].center_y,omv[OMV_LAND_ID].raw_data.block[0].center_x,15,0,0.2f,0.2f),1);
     //////////////////////////////////////////////////////////////////////
 }
 
@@ -81,10 +88,12 @@ static void Loop_10Hz(void) //100ms执行一次
 
 static void Loop_5Hz(void) //200ms执行一次
 {
-    TempToPC.Area=omv[OMV_BAR_ID].raw_data.block[3].area;
-    TempToPC.Area2=omv[OMV_BAR_ID].raw_data.block[2].area;
-    SensorData.ImageX=omv[OMV_BAR_ID].raw_data.block[0].center_x;
-    DataSendToPC(5);
+//    TempToPC.Area=omv[OMV_BAR_ID].raw_data.block[3].area;
+//    TempToPC.Area2=omv[OMV_BAR_ID].raw_data.block[2].area;
+//    TempToPC.Area3=omv[OMV_LAND_ID].raw_data.block[0].area;
+//    SensorData.ImageX=omv[OMV_LAND_ID].raw_data.block[0].center_x;
+//    SensorData.ImageY=omv[OMV_LAND_ID].raw_data.block[0].center_y;
+//    DataSendToPC(5);
 }
 
 static void Loop_2Hz(void) //500ms执行一次

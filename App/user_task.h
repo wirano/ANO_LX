@@ -24,7 +24,7 @@
 #define ImageCenterX 350
 #define ImageCenterY 220
 #define PixelsNumThr150 3500
-#define PixelsNumThr80 8000
+#define PixelsNumThr80 8500
 
 typedef struct
 {
@@ -54,7 +54,10 @@ typedef struct
 {
     uint32_t Area;
     uint32_t Area2;
-}TempToPCSt;
+    uint32_t Area3;
+    int16_t ErrX;
+    int16_t ErrY;
+}__attribute__ ((__packed__)) TempToPCSt;
 
 typedef struct {
     uint8_t delay_star;
@@ -129,7 +132,7 @@ uint8_t CircularMotion(uint16_t Hz,uint16_t r_cm,uint16_t speed_r_min,uint16_t a
 //X轴移动，检测到圆后停下来 (任务频率，方向_0负1正，要检测的值_当不等于0时)
 uint8_t X_axisDetect(uint16_t Hz,uint8_t direction,uint16_t detect_value,uint16_t speed);
 
-//位置调节(任务频率，x轴期望值，y轴期望值，x轴反馈值，y轴反馈值，允许误差范围，坐标变换_0:与机体坐标系相同_1:与机体坐标系相反,比例系数，积分系数)
+//位置调节_机体坐标系(任务频率，x轴期望值，y轴期望值，x轴反馈值，y轴反馈值，允许误差范围，坐标变换_0:与机体坐标系相同_1:与机体坐标系相反,比例系数，积分系数)
 uint8_t PositionAdjust(uint16_t Hz,uint16_t x_ex,uint16_t y_ex,uint16_t x_fb,uint16_t y_fb,uint16_t allow_err,uint8_t coordinate_change,float kp,float ki);
 
 void Task_2020(uint16_t Hz);
@@ -141,7 +144,7 @@ uint8_t ModeJudge(uint16_t Hz,_omv_block_st *block_data,uint32_t pixels_num_thr,
 uint8_t GoToTarget(uint16_t Hz,uint32_t fb_pixels_num,uint32_t pixels_num_thr,uint16_t ex_center_x,uint16_t fb_center_x);
 
 //校验某一个值是否在一段时间内等于某一个值(任务频率，校验时长，需要检测的量，1：正校验_0：反校验（检验某一值！=ex）)
-uint8_t CheckTime_s(uint16_t Hz,uint8_t check_s,uint16_t ex,uint8_t check_value,uint8_t direction);
+uint8_t CheckTime_s(uint16_t Hz,float check_s,uint16_t ex,uint8_t check_value,uint8_t direction);
 
 extern Process_Delay Takeoff_delay;
 extern Process_Delay Unlock_delay;
