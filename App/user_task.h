@@ -53,6 +53,7 @@ typedef struct
 typedef struct
 {
     uint32_t Area;
+    uint32_t Area2;
 }TempToPCSt;
 
 typedef struct {

@@ -69,7 +69,7 @@ static void Loop_20Hz(void) //50ms执行一次
     SensorData.Distance=distance;
 
 //    MyProcessTest(20);
-    Task_2020(10);
+    Task_2020(20);
     //////////////////////////////////////////////////////////////////////
 }
 
@@ -82,6 +82,7 @@ static void Loop_10Hz(void) //100ms执行一次
 static void Loop_5Hz(void) //200ms执行一次
 {
     TempToPC.Area=omv[OMV_BAR_ID].raw_data.block[3].area;
+    TempToPC.Area2=omv[OMV_BAR_ID].raw_data.block[2].area;
     SensorData.ImageX=omv[OMV_BAR_ID].raw_data.block[0].center_x;
     DataSendToPC(5);
 }
