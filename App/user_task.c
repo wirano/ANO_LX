@@ -767,6 +767,18 @@ void Task_2020(uint16_t Hz)
         mission_flag = 1;
         State = 0;
         ready=0;
+        for (int i = 0; i < 4; ++i) {
+            omv[OMV_BAR_ID].raw_data.block[i].shape = 0;
+            omv[OMV_BAR_ID].raw_data.block[i].center_x =0;
+            omv[OMV_BAR_ID].raw_data.block[i].center_y =0;
+            omv[OMV_BAR_ID].raw_data.block[i].area = 0;
+            omv[OMV_BAR_ID].raw_data.block[i].color = 0;
+            omv[OMV_LAND_ID].raw_data.block[i].shape = 0;
+            omv[OMV_LAND_ID].raw_data.block[i].center_x =0;
+            omv[OMV_LAND_ID].raw_data.block[i].center_y =0;
+            omv[OMV_LAND_ID].raw_data.block[i].area = 0;
+            omv[OMV_LAND_ID].raw_data.block[i].color = 0;
+        }
     }
     else if (rc_in.rc_ch.st_data.ch_[ch_5_aux1] == 1500)
     {
@@ -814,14 +826,14 @@ void Task_2020(uint16_t Hz)
         }
         else if(State==5)
         {
-            if( CheckTime_s(Hz,0,0.5f,Y_axisAdjust(Hz,ImageCenterX,omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target1Index].center_x,0,20,1,0.2f,0.2f),1)==1 )  //根据图像将飞机调到正对杆
+            if( CheckTime_s(Hz,0,0.5f,Y_axisAdjust(Hz,ImageCenterX,omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target1Index].center_x,0,25,1,0.2f,0.2f),1)==1 )  //根据图像将飞机调到正对杆
             {
                 State++;
             }
         }
         else if(State==6)
         {
-            if( ABS(omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target1Index].center_x-ImageCenterX)>20 )
+            if( ABS(omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target1Index].center_x-ImageCenterX)>25 )
             {
                 State=5;
             }
@@ -887,14 +899,14 @@ void Task_2020(uint16_t Hz)
         }
         else if(State==14)
         {
-            if( CheckTime_s(Hz,0,0.5f,Y_axisAdjust(Hz,ImageCenterX,omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target2Index].center_x,0,20,1,0.2f,0.2f),1)==1 )  //根据图像将飞机调到正对杆
+            if( CheckTime_s(Hz,0,0.5f,Y_axisAdjust(Hz,ImageCenterX,omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target2Index].center_x,0,25,1,0.2f,0.2f),1)==1 )  //根据图像将飞机调到正对杆
             {
                 State++;
             }
         }
         else if(State==15)
         {
-            if( ABS(omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target2Index].center_x-ImageCenterX)>20 )
+            if( ABS(omv[OMV_BAR_ID].raw_data.block[TargetMessage.Target2Index].center_x-ImageCenterX)>25 )
             {
                 State=14;
             }

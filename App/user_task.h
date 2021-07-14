@@ -24,7 +24,7 @@
 #define ImageCenterX 350
 #define ImageCenterY 220
 #define PixelsNumThr150 3500
-#define PixelsNumThr80 8500
+#define PixelsNumThr80 10000
 
 typedef struct
 {
